@@ -155,6 +155,7 @@ body.authm nav,body.authm #undo{display:none}
 .authc .alogo{height:72px;display:block;margin:0 auto 10px}.authc h1{font-size:30px;margin-bottom:6px}
 .af{display:grid;gap:4px;font-weight:500;margin:12px 0}.af input{min-height:46px;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--bg);text-align:right}
 .aerr{min-height:22px;color:var(--rd);font-size:14px;margin:4px 0 8px}.aerr.ok{color:var(--mut)}
+.srow.req{background:var(--card);border-radius:12px;padding:8px 10px;border:0}
 .tag{font-size:12px;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--mut);font-weight:500}
 @media(max-width:640px){.seg button{font-size:13px}.srow.s5{grid-template-columns:1fr 1fr 1fr}.srow.s5 input,.srow.s5 select{grid-column:span 3}.srow.s5 button{grid-column:auto}}
 .ro .tas button{pointer-events:none;opacity:.7}
@@ -344,7 +345,7 @@ function render(){if(AUTHV){main.innerHTML=AUTHV;return}const a=document.activeE
  document.querySelectorAll('#nav a').forEach(x=>x.classList.toggle('on',x.dataset.v===ui.view));
  document.body.classList.toggle('ro',readOnly);
  let h='';
- h+=tipBox();
+ h+=tipBox();if(isFB()&&ROLE==='admin'&&REQS.length&&ui.view==='take')h+=`<div class="note tip"><span>فيه ${REQS.length} طلب انضمام ينتظر موافقتك.</span><a class="btn s" href="#settings" style="text-decoration:none;display:inline-flex;align-items:center">عرض الطلبات</a></div>`;
  if(readOnly)h+='<div class="note">وضع القراءة فقط: لا تملك صلاحية التعديل.</div>';
  if(stale)h+='<div class="note">تعذّر الوصول للبيانات حالياً، قد تكون غير محدّثة.</div>';
  h+=({take:vTake,stats:vStats,students:vStudents,settings:vSettings}[ui.view])();
@@ -489,7 +490,7 @@ function vSettings(){const d=readOnly?' disabled':'',t=TERM();
  <h2>سجل التعديلات</h2>`;
  const L=allLogs().slice(0,300);
  if(!L.length)h+='<p class="mut">لا توجد تعديلات مسجّلة بعد.</p>';
- else{h+='<details><summary>آخر '+L.length+' تعديل</summary>';L.forEach(x=>{const dt=new Date(x.t);h+=`<div class="lg"><span class="mut">${fmt(dt)} ${pad(dt.getHours())}:${pad(dt.getMinutes())}</span><span>${esc(x.x)} <span class="mut">— ${esc((x.u&&NAMES[x.u])||(x.u&&String(x.u).includes('@')?String(x.u).split('@')[0]:'')||(local&&x.u)||(x.u===ME?'أنت':'مستخدم'))}</span></span></div>`});h+='</details>'}
+ else{h+='<details><summary>آخر '+L.length+' تعديل</summary>';L.forEach(x=>{const dt=new Date(x.t);h+=`<div class="lg"><span class="mut">${fmt(dt)} ${pad(dt.getHours())}:${pad(dt.getMinutes())}</span><span>${esc(x.x)} <span class="mut">— ${esc((x.u&&NAMES[x.u])||(x.u&&ACC&&ACC.names&&ACC.names[x.u])||(x.u&&String(x.u).includes('@')?String(x.u).split('@')[0]:'')||(local&&x.u)||(x.u===ME?'أنت':'مستخدم'))}</span></span></div>`});h+='</details>'}
  return h}
 
 /* ---------- profile ---------- */
@@ -689,6 +690,8 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
  if(D.cal){const [nn,dw]=D.cal.split(':').map(Number);ui.week=nn;const s=sessions(nn).find(x=>x.day===dw);ui.sess=s?s.key:null;location.hash='take';return}
  if(D.tipoff){try{localStorage.setItem('watad-tip-'+D.tipoff,Date.now()+3*864e5)}catch(x){}render();return}
  if(D.act==='accadd'){const e=($('#accEm').value||'').trim().toLowerCase(),r=$('#accR').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){toast('اكتب إيميل صحيح');return}await accSave(A=>{accRm(A,e);A[r+'s'].push(e)},'أُضيف '+e);return}
+ if(D.reqok){const e=D.reqok,q=REQS.find(x=>x.email===e)||{},sel=main.querySelector(`[data-reqrole="${CSS.escape(e)}"]`),r=sel?sel.value:'editor';await accSave(A=>{accRm(A,e);A[r+'s'].push(e);if(q.name)A.names[e]=q.name},'وافقت على '+(q.name||e));try{await FBS.doc('requests/'+e).delete()}catch(x){}return}
+ if(D.reqno){const e=D.reqno;if(!await ask('رفض طلب '+e+'؟','رفض'))return;try{await FBS.doc('requests/'+e).delete();toast('رُفض الطلب')}catch(x){toast('تعذّر الرفض')}return}
  if(D.accdel){const e=D.accdel;if(!await ask(e===ME?'تبي تشيل نفسك؟ بتطلع من الموقع.':'إزالة '+e+' من المشرفين؟','إزالة'))return;await accSave(A=>accRm(A,e),'أُزيل '+e);return}
  if(D.act==='allowedit'){readOnly=false;ui.backup=false;render();return}
  if(D.week){ui.week=+D.week;ui.sess=null;render();return}
@@ -1000,7 +1003,7 @@ function saInit(){ME=(()=>{try{return localStorage.getItem(SN)||''}catch(e){retu
 
 /* ---------- accounts and cloud storage (Firebase) ---------- */
 const FB={"apiKey":"AIzaSyDzZSLrVR0t7PKnFdQgZV4wilall_jy1A0","authDomain":"wtd-halaqa.firebaseapp.com","projectId":"wtd-halaqa","storageBucket":"wtd-halaqa.firebasestorage.app","messagingSenderId":"947638973998","appId":"1:947638973998:web:b6f1892738e96e037e11bf"};
-let FBA=null,FBS=null,ACC=null,ROLE=null,AUTHV=null,authUser,fbStarted=false,CFGX=true;
+let REQS=[];let FBA=null,FBS=null,ACC=null,ROLE=null,AUTHV=null,authUser,fbStarted=false,CFGX=true;
 const isFB=()=>!!FB&&fbStarted;let FBDBG='';
 const tmo=(p,ms,code)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>{const e=new Error(code);e.code=code;j(e)},ms))]);
 const AUTHERR={'auth/invalid-email':'الإيميل غير صحيح','auth/user-not-found':'ما فيه حساب بهذا الإيميل','auth/wrong-password':'كلمة المرور غلط','auth/invalid-credential':'الإيميل أو كلمة المرور غلط','auth/invalid-login-credentials':'الإيميل أو كلمة المرور غلط','auth/email-already-in-use':'فيه حساب بهذا الإيميل، سجّل دخول','auth/weak-password':'كلمة المرور لازم تكون ٦ خانات أو أكثر','auth/too-many-requests':'محاولات كثيرة، انتظر شوي وجرب','auth/network-request-failed':'ما فيه اتصال بالإنترنت','auth/missing-password':'اكتب كلمة المرور'};
@@ -1016,10 +1019,13 @@ function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let
   <p style="margin:14px 0 0"><button class="lnk" data-au="reset">نسيت كلمة المرور؟</button></p>`;
  else if(kind==='verify')b=`<h1>فعّل إيميلك</h1><p>أرسلنا رابط تفعيل إلى <b dir="ltr">${em}</b>. افتح الإيميل واضغط الرابط، وإذا ما لقيته شوف مجلد البريد غير المرغوب.</p>
   <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="checked">فعّلته</button><button class="btn g" data-au="resend">أرسل الرابط مرة ثانية</button><button class="btn g" data-au="out">خروج</button></div>`;
- else if(kind==='first')b=`<h1>أهلاً بك</h1><p>أنت أول من يدخل الموقع، فبتصير <b>المشرف الرئيسي</b>: تضيف المشرفين وتحدد صلاحياتهم من الإعدادات.</p><p class="mut" dir="ltr">${em}</p>
+ else if(kind==='first')b=`<h1>أهلاً بك</h1><p>أنت أول من يدخل الموقع، فبتصير <b>المشرف الرئيسي</b>: تضيف المشرفين وتحدد صلاحياتهم من الإعدادات.</p><p class="mut" dir="ltr">${em}</p><label class="af">اسمك<input type="text" id="aNm" autocomplete="name" placeholder="مثلاً: أبو خالد"></label>
   <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="claim">ابدأ</button><button class="btn g" data-au="out">خروج</button></div>`;
- else if(kind==='denied')b=`<h1>ما عندك صلاحية</h1><p>حسابك <b dir="ltr">${em}</b> مسجّل، بس ما انضاف للمشرفين. اطلب من المشرف الرئيسي يضيف إيميلك من الإعدادات، وبعدها اضغط «تحقق مرة ثانية».</p>
-  <div class="acts"><button class="btn" data-au="recheck">تحقق مرة ثانية</button><button class="btn g" data-au="out">خروج</button></div>`;
+ else if(kind==='denied')b=`<h1>طلب انضمام</h1><p>حسابك <b dir="ltr">${em}</b> جاهز. اكتب اسمك وأرسل طلب انضمام، ويوافق عليه المشرف الرئيسي.</p>
+  <label class="af">اسمك<input type="text" id="aNm" autocomplete="name" placeholder="مثلاً: أبو خالد"></label>
+  <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="req">أرسل الطلب</button><button class="btn g" data-au="out">خروج</button></div>`;
+ else if(kind==='waiting')b=`<h1>طلبك وصل</h1><p>أرسلنا طلبك للمشرف الرئيسي. أول ما يوافق تدخل الموقع تلقائياً، وتقدر تسكّر الصفحة وترجع لها بعدين.</p><p class="mut" dir="ltr">${em}</p>
+  <div class="acts"><button class="btn g" data-au="recheck">تحقق الحين</button><button class="btn g" data-au="out">خروج</button></div>`;
  else b=`<h1>تعذّر الاتصال</h1><p>${esc(extra||'تأكد من الإنترنت وحدّث الصفحة.')}</p>${FBDBG?`<p class="mut" dir="ltr" style="font-size:12px">${esc(FBDBG)}</p>`:''}<div class="acts"><button class="btn" data-au="reload">تحديث</button></div>`;
  AUTHV=`<section class="authc"><img src="logo.png" alt="" class="alogo">${b}</section>`;document.body.classList.add('authm');main.innerHTML=AUTHV;
  const f=$('#aEm');if(f)setTimeout(()=>f.focus(),0)}
@@ -1031,7 +1037,9 @@ async function authAct(a){const em=($('#aEm')||{}).value,pw=($('#aPw')||{}).valu
   else if(a==='reset'){if(!em)return aMsg('اكتب إيميلك فوق، ثم اضغط «نسيت كلمة المرور» مرة ثانية');await FBA.sendPasswordResetEmail(em.trim());aMsg('أرسلنا رابط تغيير كلمة المرور لإيميلك',1)}
   else if(a==='resend'){await authUser.sendEmailVerification();aMsg('أرسلنا الرابط مرة ثانية',1)}
   else if(a==='checked'){await authUser.reload();authUser=FBA.currentUser;if(!authUser.emailVerified)return aMsg('للحين ما تفعّل، افتح الرابط اللي في الإيميل');fbRoute()}
-  else if(a==='claim'){const e=authUser.email.toLowerCase();aMsg('جاري التجهيز…',1);try{await tmo(FBS.doc('meta/access').set({admins:[e],editors:[],viewers:[]}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت: تأكد إن قواعد الحماية انلصقت في Rules واضغطت Publish.':x&&x.code==='timeout'?'ما قدرت أوصل لقاعدة البيانات، تأكد إنك أنشأتها.':'صار خطأ: '+((x&&x.code)||''))}fbRoute()}
+  else if(a==='claim'){const e=authUser.email.toLowerCase(),nm=(($('#aNm')||{}).value||'').trim();aMsg('جاري التجهيز…',1);try{await tmo(FBS.doc('meta/access').set({admins:[e],editors:[],viewers:[],names:nm?{[e]:nm}:{}}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت: تأكد إن قواعد الحماية انلصقت في Rules واضغطت Publish.':x&&x.code==='timeout'?'ما قدرت أوصل لقاعدة البيانات، تأكد إنك أنشأتها.':'صار خطأ: '+((x&&x.code)||''))}fbRoute()}
+  else if(a==='req'){const nm=(($('#aNm')||{}).value||'').trim();if(!nm)return aMsg('اكتب اسمك');aMsg('جاري الإرسال…',1);const e=authUser.email.toLowerCase();
+   try{await tmo(FBS.doc('requests/'+e).set({email:e,name:nm,t:Date.now()}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت الطلب: قواعد الحماية تحتاج تحديث.':'تعذّر الإرسال، حاول مرة ثانية')}authView('waiting')}
   else if(a==='recheck'){authView('loading');fbRoute()}
   else if(a==='out'){await FBA.signOut()}
   else if(a==='reload'){location.reload()}
@@ -1043,9 +1051,11 @@ async function fbRoute(){const u=authUser;
  authView('loading','جاري التحقق من صلاحيتك…');try{await tmo(u.getIdToken(true),15000,'timeout')}catch(e){}let a;try{a=await tmo(FBS.doc('meta/access').get(),20000,'timeout')}catch(e){FBDBG=(e&&(e.code||e.message))||'';if(e&&e.code==='timeout')return authView('error','ما قدرت أوصل لقاعدة البيانات. تأكد إنك أنشأت Firestore Database من رابط الخطوة الخامسة، وإن الإنترنت شغال، وبعدها حدّث الصفحة.');return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
  const em=u.email.toLowerCase();if(!a.exists)return authView('first');
  ACC=a.data();ROLE=(ACC.admins||[]).includes(em)?'admin':(ACC.editors||[]).includes(em)?'editor':(ACC.viewers||[]).includes(em)?'viewer':null;
- if(!ROLE)return authView('denied');
+ if(!ROLE){const e=em;if(!fbRoute.w){fbRoute.w=FBS.doc('meta/access').onSnapshot(x=>{const d=x.exists?x.data():{};if([...(d.admins||[]),...(d.editors||[]),...(d.viewers||[])].includes(e))location.reload()},()=>{})}
+  let r=null;try{r=await tmo(FBS.doc('requests/'+e).get(),15000,'timeout')}catch(x){}return authView(r&&r.exists?'waiting':'denied')}
  fbStarted=true;AUTHV=null;document.body.classList.remove('authm');ME=em;if(ROLE==='viewer')readOnly=true;
  FBS.doc('meta/access').onSnapshot(s=>{if(s.exists){ACC=s.data();if(ui.view==='settings'&&ready)render()}},()=>{});
+ if(ROLE==='admin')FBS.collection('requests').onSnapshot(q=>{REQS=q.docs.map(d=>d.data()).filter(x=>x&&x.email).sort((a,b)=>(a.t||0)-(b.t||0));if(ready)render()},()=>{});
  db=wrapFS(FBS);subscribe()}
 async function fbStart(){authView('loading','جاري تحميل نظام الحسابات…');
  try{await tmo(loadFirebase(),25000,'timeout')}catch(e){FBDBG='load: '+((e&&e.code)||'');return authView('error','تعذّر تحميل نظام الحسابات. تأكد من الإنترنت وحدّث الصفحة.')}
@@ -1078,10 +1088,11 @@ function vAccount(){if(!isFB())return '';const R={admin:'مشرف رئيسي',ed
  if(ROLE!=='admin')return h;
  const A=ACC||{},rows=[].concat((A.admins||[]).map(e=>[e,'admin']),(A.editors||[]).map(e=>[e,'editor']),(A.viewers||[]).map(e=>[e,'viewer']));
  h+=`<h2>المشرفون</h2><p class="mut" style="margin:0 0 6px">أضف إيميل كل مشرف، ويسوي هو حساب بنفس الإيميل من صفحة الدخول. «مشرف» يحضّر ويعدّل، و«اطلاع فقط» يشوف بدون تعديل، و«مشرف رئيسي» يضيف ويشيل المشرفين.</p>`;
- rows.forEach(([e,r])=>{h+=`<div class="srow trow"><span dir="ltr" style="text-align:right">${esc(e)}</span><select data-accrole="${esc(e)}" aria-label="الصلاحية">${Object.keys(R).map(k=>`<option value="${k}"${k===r?' selected':''}>${R[k]}</option>`).join('')}</select><button class="btn dg s" data-accdel="${esc(e)}">إزالة</button></div>`});
+ if(REQS.length){h+=`<h2>طلبات الانضمام (${REQS.length})</h2>`;REQS.forEach(q=>{h+=`<div class="srow trow req"><span><b>${esc(q.name||'بدون اسم')}</b><br><span class="mut" dir="ltr">${esc(q.email)}</span></span><select data-reqrole="${esc(q.email)}" aria-label="الصلاحية"><option value="editor">مشرف</option><option value="viewer">اطلاع فقط</option><option value="admin">مشرف رئيسي</option></select><span class="acts"><button class="btn s" data-reqok="${esc(q.email)}">موافقة</button><button class="btn dg s" data-reqno="${esc(q.email)}">رفض</button></span></div>`})}
+ rows.forEach(([e,r])=>{const nm=(A.names||{})[e];h+=`<div class="srow trow"><span>${nm?'<b>'+esc(nm)+'</b><br>':''}<span dir="ltr" class="${nm?'mut':''}">${esc(e)}</span></span><select data-accrole="${esc(e)}" aria-label="الصلاحية">${Object.keys(R).map(k=>`<option value="${k}"${k===r?' selected':''}>${R[k]}</option>`).join('')}</select><button class="btn dg s" data-accdel="${esc(e)}">إزالة</button></div>`});
  h+=`<div class="form" style="grid-template-columns:minmax(0,1fr) 150px auto;margin-top:8px"><input type="email" id="accEm" placeholder="إيميل المشرف الجديد" dir="ltr" autocomplete="off"><select id="accR"><option value="editor">مشرف</option><option value="viewer">اطلاع فقط</option><option value="admin">مشرف رئيسي</option></select><button class="btn" data-act="accadd">إضافة</button></div>`;
  return h}
-async function accSave(mut,msg){const A={admins:[...(ACC.admins||[])],editors:[...(ACC.editors||[])],viewers:[...(ACC.viewers||[])]};mut(A);
+async function accSave(mut,msg){const A={admins:[...(ACC.admins||[])],editors:[...(ACC.editors||[])],viewers:[...(ACC.viewers||[])],names:Object.assign({},ACC.names||{})};mut(A);
  if(!A.admins.length){toast('لازم يبقى مشرف رئيسي واحد على الأقل');return}
  try{await FBS.doc('meta/access').set(A);ACC=A;toast(msg);log(msg);render()}catch(e){toast('تعذّر الحفظ: '+(e&&e.code==='permission-denied'?'ما عندك صلاحية':'حاول مرة ثانية'))}}
 const accRm=(A,e)=>{['admins','editors','viewers'].forEach(k=>A[k]=A[k].filter(x=>x!==e))};

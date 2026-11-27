@@ -76,7 +76,7 @@ details summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;alig
 .days button{min-height:40px;padding:4px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);cursor:pointer;font-size:14px}
 .days button.on{background:var(--te);border-color:var(--te);color:#fff}
 .prow{display:grid;grid-template-columns:minmax(120px,220px) minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-input[type=text],input[type=number],input[type=date],select,textarea{min-height:44px;border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 10px;width:100%}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{min-height:44px;border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 10px;width:100%}
 textarea{min-height:120px}
 .form{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:8px;align-items:center}
 .srow{display:grid;grid-template-columns:minmax(0,1fr) 170px auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -181,6 +181,7 @@ table.heat td,table.heat th{text-align:center;padding:6px 4px;min-width:34px;fon
 body.pmode #nav,body.pmode #inst,body.pmode #sst,body.pmode #undo{display:none!important}
 .portal{max-width:760px;margin:0 auto}.phero{display:flex;gap:14px;align-items:center;background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px}.phero img{height:64px;width:auto;border-radius:10px}.phero h1{font-size:clamp(28px,6vw,40px)}
 .plink{background:var(--card);border-radius:10px;padding:8px 12px;font-size:13px;word-break:break-all;color:var(--mut)}
+.brand{overflow-wrap:anywhere;line-height:1.15}@media(max-width:640px){.brand{font-size:clamp(19px,6.2vw,24px)}}
 </style>
 </head>
 <body>
@@ -238,8 +239,8 @@ const $=s=>document.querySelector(s);
 const AD='٠١٢٣٤٥٦٧٨٩';
 const ar=s=>String(s).replace(/[0-9]/g,d=>AD[d]).replace(/%/g,'٪');
 const toL=s=>String(s??'').replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776).replace(/[−–]/g,'-');
-function arabize(root){if(root.nodeType===3){const n=root;if(/[0-9%]/.test(n.nodeValue)&&n.parentElement&&!n.parentElement.closest('script,style,textarea,.lat'))n.nodeValue=ar(n.nodeValue);return}
- if(root.nodeType!==1||root.closest&&root.closest('script,style'))return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(/[0-9%]/.test(n.nodeValue)&&!n.parentElement.closest('script,style,textarea,.lat'))n.nodeValue=ar(n.nodeValue)}}
+function arabize(root){if(root.nodeType===3){const n=root;if(/[0-9%]/.test(n.nodeValue)&&n.parentElement&&!n.parentElement.closest('script,style,textarea,.lat,[dir=ltr]'))n.nodeValue=ar(n.nodeValue);return}
+ if(root.nodeType!==1||root.closest&&root.closest('script,style'))return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(/[0-9%]/.test(n.nodeValue)&&!n.parentElement.closest('script,style,textarea,.lat,[dir=ltr]'))n.nodeValue=ar(n.nodeValue)}}
 new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData')arabize(m.target);else m.addedNodes.forEach(arabize)}}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 arabize(document.body);
 const HF=(()=>{try{return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{day:'numeric',month:'numeric',year:'numeric'})}catch(e){return null}})();
@@ -347,7 +348,7 @@ function termSel(){if(S.cfg.terms.length<2)return '';return `<div class="tsel"><
 const isFB=()=>false;
 /* ---------- views ---------- */
 function render(){if(PORTALV){main.innerHTML=PORTALV;return}const a=document.activeElement;
- if(a&&main.contains(a)&&a.matches('input[type=text],input[type=number],textarea')){deferRender=true;return}
+ if(a&&main.contains(a)&&a.matches('input[type=text],input[type=email],input[type=number],textarea')){deferRender=true;return}
  deferRender=false;
  if(!ready&&!stale){main.innerHTML='<div class="empty">جاري التحميل…</div>';return}
  if(!ui.term||!S.cfg.terms.some(t=>t.id===ui.term))ui.term=S.cfg.cur;
@@ -587,7 +588,7 @@ main.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-
 let PORTALV=null,pT=0;const PTOK=location.hash.startsWith('#p-')?decodeURIComponent(location.hash.slice(3)):null;
 const HIDN=()=>(typeof HIDV!=='undefined'&&HIDV)||'wtd';
 const hTitle=()=>((S.cfg.title||'').trim()||'وتد');
-const PH=(()=>{try{return JSON.parse(localStorage.getItem('watad-ph')||'{}')}catch(e){return {}}})();
+let PH=null;const phLoad=()=>PH||(PH=(()=>{try{return JSON.parse(localStorage.getItem('watad-ph-'+HIDN())||'{}')}catch(e){return {}}})());
 const ptok=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>'abcdefghijkmnpqrstuvwxyz23456789'[b%32]).join('');
 function portalURL(st){if(!st)return '';if(isFB())return st.portal?location.origin+location.pathname+'#p-'+st.portal:'';return location.origin+location.pathname+'#p-'+encodeURIComponent(st.id)}
 function pDataAll(list){const keep=ui.term;ui.term=S.cfg.cur;try{const rows=calc({stW:'all',stP:'all',stB:'all'}).rows;
@@ -613,13 +614,13 @@ async function portalFB(){pView('<div class="empty">جاري التحميل…</
   if(!sn.exists)return pView('<div class="empty"><h2>الرابط غير صالح</h2><p class="mut">يمكن أن المشرف أوقف هذا الرابط. تواصل معه للحصول على رابط جديد.</p></div>');
   const d=sn.data();if(d.title)document.title=d.title+' · '+d.name;pView(portalHTML(d))}catch(e){pView('<div class="empty"><h2>تعذّر التحميل</h2><p class="mut">تأكد من الإنترنت وحدّث الصفحة.</p></div>')}}
 function portalSoon(){if(!isFB()||readOnly||!ready||!S.students.some(x=>x.portal))return;clearTimeout(pT);pT=setTimeout(portalSync,4000)}
-async function portalSync(){if(!isFB()||readOnly)return;const list=S.students.filter(x=>x.portal),data=pDataAll(list),jobs=[];
+async function portalSync(){if(!isFB()||readOnly)return;phLoad();const list=S.students.filter(x=>x.portal),data=pDataAll(list),jobs=[];
  list.forEach((st,i)=>{const h=JSON.stringify(data[i]);if(PH[st.portal]!==h)jobs.push([st.portal,data[i],h])});
  const live=new Set(list.map(x=>x.portal));Object.keys(PH).forEach(t=>{if(!live.has(t))jobs.push([t,null])});
  for(const [t,d,h] of jobs){try{if(d){await FBS.doc('portal/'+t).set(Object.assign({updated:Date.now()},d));PH[t]=h}else{await FBS.doc('portal/'+t).delete();delete PH[t]}}catch(e){}}
- try{localStorage.setItem('watad-ph',JSON.stringify(PH))}catch(e){}}
+ try{localStorage.setItem('watad-ph-'+HIDN(),JSON.stringify(PH))}catch(e){}}
 async function portalMake(st){if(st.portal)return st.portal;st.portal=ptok();saveSt();log('إنشاء رابط ولي الأمر للطالب '+st.name);clearTimeout(pT);await portalSync();return st.portal}
-async function portalStop(st){if(!st.portal)return;const t=st.portal;delete st.portal;saveSt();log('إيقاف رابط ولي الأمر للطالب '+st.name);try{await FBS.doc('portal/'+t).delete()}catch(e){}delete PH[t];try{localStorage.setItem('watad-ph',JSON.stringify(PH))}catch(e){}}
+async function portalStop(st){if(!st.portal)return;phLoad();const t=st.portal;delete st.portal;saveSt();log('إيقاف رابط ولي الأمر للطالب '+st.name);try{await FBS.doc('portal/'+t).delete()}catch(e){}delete PH[t];try{localStorage.setItem('watad-ph-'+HIDN(),JSON.stringify(PH))}catch(e){}}
 function weekSum(st,n){const c={};let tot=0;active(n).forEach(s=>{const k=recOf(n,s.key)[st.id];if(k){c[k]=(c[k]||0)+1;tot++}});
  if(!tot)return '';const at=(c.sh||0)+(c.p||0)+(c.l||0);let m='حضر '+at+' من '+tot;if(c.a)m+='، وغاب '+c.a;if(c.e)m+='، واعتذر '+c.e;if(c.l)m+='، وتأخر '+c.l;return m}
 function parentMsg(st,n){const d=pDataAll([st])[0],ws=weekSum(st,n),u=portalURL(st);
@@ -935,7 +936,7 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
   case 'expstats':expStats();break;
   case 'expterm':expTerm();break;
   case 'xlsx':expXlsx();break;
-  case 'backup':try{localStorage.setItem('watad-lastbk',Date.now())}catch(x){}save('نسخة-تحضير-وتد-'+ar(iso(new Date()))+'.json',JSON.stringify({cfg:S.cfg,students:S.students,all:S.all,bonus:S.bonus,cases:S.cases||{}},null,1));render();break}
+  case 'backup':try{localStorage.setItem('watad-lastbk',Date.now())}catch(x){}save('نسخة-تحضير-'+hTitle().replace(/\s+/g,'-')+'-'+ar(iso(new Date()))+'.json',JSON.stringify({cfg:S.cfg,students:S.students,all:S.all,bonus:S.bonus,cases:S.cases||{}},null,1));render();break}
 }
 main.addEventListener('submit',e=>{const _b=snap();onMainSubmit(e);pushUndo(_b)});
 function onMainSubmit(e){e.preventDefault();if(readOnly)return;
@@ -969,7 +970,7 @@ async function onMainChange(e){const t=e.target,D=t.dataset;
 main.addEventListener('focusout',()=>setTimeout(()=>{if(deferRender&&!main.contains(document.activeElement))render()},0));
 main.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-ren],[data-bren],[data-pren],[data-tren],#q'))e.target.blur()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.prof&&document.querySelectorAll('.ov').length===1)closeProfile()});
-function route(){if(PORTALV&&!location.hash.startsWith('#p-')){location.hash='';location.reload();return}const ae=document.activeElement;if(ae&&main.contains(ae)&&ae.blur)ae.blur();deferRender=false;const h=location.hash.slice(1);ui.view=['take','stats','cases','students','settings'].includes(h)?h:'take';render();window.scrollTo(0,0);csFocusNow()}
+function route(){if(ui.prof)closeProfile();document.querySelectorAll('.ov').forEach(o=>{if(!o.querySelector('[data-x="seed"]'))o.remove()});if(PORTALV&&!location.hash.startsWith('#p-')){location.hash='';location.reload();return}const ae=document.activeElement;if(ae&&main.contains(ae)&&ae.blur)ae.blur();deferRender=false;const h=location.hash.slice(1);ui.view=['take','stats','cases','students','settings'].includes(h)?h:'take';render();window.scrollTo(0,0);csFocusNow()}
 window.addEventListener('hashchange',route);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ready){const w=S.cfg.terms.find(x=>x.id===S.cfg.cur),b=w&&w.weeks;autoWeeks();if(w&&w.weeks!==b)render()}});
 
@@ -1066,7 +1067,7 @@ async function expXlsx(){toast('جاري تجهيز ملف إكسل…');
  const s4=[['الطالب','الدفعة','جوال ولي الأمر','ملاحظات','الحالة']];S.students.forEach(s=>s4.push([s.name,batchName(s.b),s.phone||'',s.note||'',s.arch?(s.grad?'متخرّج':'مؤرشف'):'نشط']));
  const add=(rows,name,w)=>{const ws=X.utils.aoa_to_sheet(rows);ws['!cols']=w.map(x=>({wch:x}));X.utils.book_append_sheet(wb,ws,name)};
  add(s1,'الملخص',[5,26,14,10,8,8,8,8,8,8,10,12,12,12,12,10]);add(s2,'سجل التحضير',[8,12,10,20,24,14,12,10,8,30]);add(s3,'النقاط الإضافية',[12,8,24,14,8,30]);add(s4,'الطلاب',[26,14,16,40,10]);
- const buf=X.write(wb,{bookType:'xlsx',type:'array'});save('تحضير-وتد-'+TERM().name+'-'+iso(new Date())+'.xlsx',new Blob([buf]))}
+ const buf=X.write(wb,{bookType:'xlsx',type:'array'});save('تحضير-'+hTitle().replace(/\s+/g,'-')+'-'+TERM().name+'-'+iso(new Date())+'.xlsx',new Blob([buf]))}
 async function save(filename,data){if(!dl){try{const b=data instanceof Blob?data:new Blob([data]),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('تم الحفظ')}catch(e){toast('تعذّر الحفظ')}return}
  try{await dl.save({filename,data});toast('تم الحفظ')}catch(e){const c=e&&e.code;toast(c==='declined'?'تم الإلغاء':c==='host_unavailable'?'افتح الصفحة في المتصفح لحفظ الملف':'تعذّر الحفظ')}}
 

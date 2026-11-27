@@ -1040,7 +1040,7 @@ async function fbRoute(){const u=authUser;
  if(fbStarted){if(!u)location.reload();return}
  if(!u)return authView('login');
  if(!u.emailVerified)return authView('verify');
- authView('loading','جاري التحقق من صلاحيتك…');let a;try{a=await tmo(FBS.doc('meta/access').get(),20000,'timeout')}catch(e){FBDBG=(e&&(e.code||e.message))||'';if(e&&e.code==='timeout')return authView('error','ما قدرت أوصل لقاعدة البيانات. تأكد إنك أنشأت Firestore Database من رابط الخطوة الخامسة، وإن الإنترنت شغال، وبعدها حدّث الصفحة.');return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
+ authView('loading','جاري التحقق من صلاحيتك…');try{await tmo(u.getIdToken(true),15000,'timeout')}catch(e){}let a;try{a=await tmo(FBS.doc('meta/access').get(),20000,'timeout')}catch(e){FBDBG=(e&&(e.code||e.message))||'';if(e&&e.code==='timeout')return authView('error','ما قدرت أوصل لقاعدة البيانات. تأكد إنك أنشأت Firestore Database من رابط الخطوة الخامسة، وإن الإنترنت شغال، وبعدها حدّث الصفحة.');return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
  const em=u.email.toLowerCase();if(!a.exists)return authView('first');
  ACC=a.data();ROLE=(ACC.admins||[]).includes(em)?'admin':(ACC.editors||[]).includes(em)?'editor':(ACC.viewers||[]).includes(em)?'viewer':null;
  if(!ROLE)return authView('denied');

@@ -762,6 +762,7 @@ function onMainSubmit(e){e.preventDefault();if(readOnly)return;
  if(e.target.id==='addB'){const v=$('#bName').value.trim();if(!v)return;S.cfg.batches.push({id:uid(),name:v});saveCfg();log('إضافة '+v);$('#bName').value='';$('#bName').blur();render()}}
 main.addEventListener('change',async e=>{const _b=snap();try{await onMainChange(e)}finally{pushUndo(_b)}});
 async function onMainChange(e){const t=e.target,D=t.dataset;
+ if(D.accname){const e=D.accname,v=t.value.trim();await accSave(A=>{if(v)A.names[e]=v;else delete A.names[e]},v?'الاسم: '+v:'حذف اسم '+e);return}
  if(D.accrole){const e=D.accrole,r=t.value;await accSave(A=>{accRm(A,e);A[r+'s'].push(e)},'تغيّرت صلاحية '+e);return}
  if(t.id==='term'){ui.term=t.value;ui.week=null;ui.sess=null;render();return}
  if(readOnly&&!/^f[WPB]$/.test(t.id))return;
@@ -1084,12 +1085,12 @@ function wrapFS(fs){const FP=firebase.firestore.FieldPath,DEL=firebase.firestore
  return {doc:p=>W(fs.doc(p),p),collection:p=>Q(fs.collection(p))}}
 
 function vAccount(){if(!isFB())return '';const R={admin:'مشرف رئيسي',editor:'مشرف',viewer:'اطلاع فقط'};
- let h=`<h2>الحساب</h2><div class="srow trow"><span>أنت داخل بـ <b dir="ltr">${esc(ME)}</b> · ${R[ROLE]||''}</span><button class="btn g s" data-au="out">تسجيل خروج</button><span></span></div>`;
+ const myN=((ACC||{}).names||{})[ME];let h=`<h2>الحساب</h2><div class="srow trow"><span>أنت داخل${myN?' باسم <b>'+esc(myN)+'</b>':''} بـ <b dir="ltr">${esc(ME)}</b> · ${R[ROLE]||''}</span><button class="btn g s" data-au="out">تسجيل خروج</button><span></span></div>`;
  if(ROLE!=='admin')return h;
  const A=ACC||{},rows=[].concat((A.admins||[]).map(e=>[e,'admin']),(A.editors||[]).map(e=>[e,'editor']),(A.viewers||[]).map(e=>[e,'viewer']));
- h+=`<h2>المشرفون</h2><p class="mut" style="margin:0 0 6px">أضف إيميل كل مشرف، ويسوي هو حساب بنفس الإيميل من صفحة الدخول. «مشرف» يحضّر ويعدّل، و«اطلاع فقط» يشوف بدون تعديل، و«مشرف رئيسي» يضيف ويشيل المشرفين.</p>`;
+ h+=`<h2>المشرفون</h2><p class="mut" style="margin:0 0 6px">اكتب اسم كل مشرف في خانته ويتحفظ لحاله. أضف إيميل كل مشرف، ويسوي هو حساب بنفس الإيميل من صفحة الدخول. «مشرف» يحضّر ويعدّل، و«اطلاع فقط» يشوف بدون تعديل، و«مشرف رئيسي» يضيف ويشيل المشرفين.</p>`;
  if(REQS.length){h+=`<h2>طلبات الانضمام (${REQS.length})</h2>`;REQS.forEach(q=>{h+=`<div class="srow trow req"><span><b>${esc(q.name||'بدون اسم')}</b><br><span class="mut" dir="ltr">${esc(q.email)}</span></span><select data-reqrole="${esc(q.email)}" aria-label="الصلاحية"><option value="editor">مشرف</option><option value="viewer">اطلاع فقط</option><option value="admin">مشرف رئيسي</option></select><span class="acts"><button class="btn s" data-reqok="${esc(q.email)}">موافقة</button><button class="btn dg s" data-reqno="${esc(q.email)}">رفض</button></span></div>`})}
- rows.forEach(([e,r])=>{const nm=(A.names||{})[e];h+=`<div class="srow trow"><span>${nm?'<b>'+esc(nm)+'</b><br>':''}<span dir="ltr" class="${nm?'mut':''}">${esc(e)}</span></span><select data-accrole="${esc(e)}" aria-label="الصلاحية">${Object.keys(R).map(k=>`<option value="${k}"${k===r?' selected':''}>${R[k]}</option>`).join('')}</select><button class="btn dg s" data-accdel="${esc(e)}">إزالة</button></div>`});
+ rows.forEach(([e,r])=>{const nm=(A.names||{})[e]||'';h+=`<div class="srow trow"><span><input type="text" data-accname="${esc(e)}" value="${esc(nm)}" placeholder="اكتب الاسم" aria-label="اسم ${esc(e)}"><span dir="ltr" class="mut" style="font-size:13px">${esc(e)}${e===ME?' (أنت)':''}</span></span><select data-accrole="${esc(e)}" aria-label="الصلاحية">${Object.keys(R).map(k=>`<option value="${k}"${k===r?' selected':''}>${R[k]}</option>`).join('')}</select><button class="btn dg s" data-accdel="${esc(e)}">إزالة</button></div>`});
  h+=`<div class="form" style="grid-template-columns:minmax(0,1fr) 150px auto;margin-top:8px"><input type="email" id="accEm" placeholder="إيميل المشرف الجديد" dir="ltr" autocomplete="off"><select id="accR"><option value="editor">مشرف</option><option value="viewer">اطلاع فقط</option><option value="admin">مشرف رئيسي</option></select><button class="btn" data-act="accadd">إضافة</button></div>`;
  return h}
 async function accSave(mut,msg){const A={admins:[...(ACC.admins||[])],editors:[...(ACC.editors||[])],viewers:[...(ACC.viewers||[])],names:Object.assign({},ACC.names||{})};mut(A);

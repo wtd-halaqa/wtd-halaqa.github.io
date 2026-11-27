@@ -1,5 +1,5 @@
 /* تحضير وتد: يفتح بدون إنترنت، ويجيب أحدث نسخة إذا توفر الإنترنت */
-var C="watad-tahdeer-v17";
+var C="watad-tahdeer-v18";
 var CORE=["./","./index.html","./manifest.json","./logo.png","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",function(e){e.waitUntil(caches.open(C).then(function(c){return Promise.all(CORE.map(function(u){return c.add(u).catch(function(){});}));}).then(function(){return self.skipWaiting();}));});
 self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf("watad-tahdeer")===0&&k!==C;}).map(function(k){return caches.delete(k);}));}).then(function(){return self.clients.claim();}));});

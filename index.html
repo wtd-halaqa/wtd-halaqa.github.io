@@ -1001,12 +1001,13 @@ function saInit(){ME=(()=>{try{return localStorage.getItem(SN)||''}catch(e){retu
 /* ---------- accounts and cloud storage (Firebase) ---------- */
 const FB={"apiKey":"AIzaSyDzZSLrVR0t7PKnFdQgZV4wilall_jy1A0","authDomain":"wtd-halaqa.firebaseapp.com","projectId":"wtd-halaqa","storageBucket":"wtd-halaqa.firebasestorage.app","messagingSenderId":"947638973998","appId":"1:947638973998:web:b6f1892738e96e037e11bf"};
 let FBA=null,FBS=null,ACC=null,ROLE=null,AUTHV=null,authUser,fbStarted=false,CFGX=true;
-const isFB=()=>!!FB&&fbStarted;
+const isFB=()=>!!FB&&fbStarted;let FBDBG='';
+const tmo=(p,ms,code)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>{const e=new Error(code);e.code=code;j(e)},ms))]);
 const AUTHERR={'auth/invalid-email':'الإيميل غير صحيح','auth/user-not-found':'ما فيه حساب بهذا الإيميل','auth/wrong-password':'كلمة المرور غلط','auth/invalid-credential':'الإيميل أو كلمة المرور غلط','auth/invalid-login-credentials':'الإيميل أو كلمة المرور غلط','auth/email-already-in-use':'فيه حساب بهذا الإيميل، سجّل دخول','auth/weak-password':'كلمة المرور لازم تكون ٦ خانات أو أكثر','auth/too-many-requests':'محاولات كثيرة، انتظر شوي وجرب','auth/network-request-failed':'ما فيه اتصال بالإنترنت','auth/missing-password':'اكتب كلمة المرور'};
 const aErr=e=>AUTHERR[e&&e.code]||'صار خطأ، حاول مرة ثانية';
 function loadFirebase(){const b='https://www.gstatic.com/firebasejs/10.14.1/';return ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'].reduce((p,f)=>p.then(()=>loadLib(b+f,()=>false)),Promise.resolve())}
 function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let b='';
- if(kind==='loading')b='<p class="mut">جاري التحميل…</p>';
+ if(kind==='loading')b=`<p class="mut">${esc(extra||'جاري التحميل…')}</p>`;
  else if(kind==='login')b=`<h1>تسجيل الدخول</h1><p class="mut">كل مشرف يدخل بإيميله.</p>
   <label class="af">الإيميل<input type="email" id="aEm" autocomplete="username" inputmode="email" dir="ltr"></label>
   <label class="af">كلمة المرور<input type="password" id="aPw" autocomplete="current-password" dir="ltr"></label>
@@ -1019,7 +1020,7 @@ function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let
   <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="claim">ابدأ</button><button class="btn g" data-au="out">خروج</button></div>`;
  else if(kind==='denied')b=`<h1>ما عندك صلاحية</h1><p>حسابك <b dir="ltr">${em}</b> مسجّل، بس ما انضاف للمشرفين. اطلب من المشرف الرئيسي يضيف إيميلك من الإعدادات، وبعدها اضغط «تحقق مرة ثانية».</p>
   <div class="acts"><button class="btn" data-au="recheck">تحقق مرة ثانية</button><button class="btn g" data-au="out">خروج</button></div>`;
- else b=`<h1>تعذّر الاتصال</h1><p>${esc(extra||'تأكد من الإنترنت وحدّث الصفحة.')}</p><div class="acts"><button class="btn" data-au="reload">تحديث</button></div>`;
+ else b=`<h1>تعذّر الاتصال</h1><p>${esc(extra||'تأكد من الإنترنت وحدّث الصفحة.')}</p>${FBDBG?`<p class="mut" dir="ltr" style="font-size:12px">${esc(FBDBG)}</p>`:''}<div class="acts"><button class="btn" data-au="reload">تحديث</button></div>`;
  AUTHV=`<section class="authc"><img src="logo.png" alt="" class="alogo">${b}</section>`;document.body.classList.add('authm');main.innerHTML=AUTHV;
  const f=$('#aEm');if(f)setTimeout(()=>f.focus(),0)}
 function aMsg(m,ok){const e=$('#aErr');if(e){e.textContent=m;e.classList.toggle('ok',!!ok)}}
@@ -1030,7 +1031,7 @@ async function authAct(a){const em=($('#aEm')||{}).value,pw=($('#aPw')||{}).valu
   else if(a==='reset'){if(!em)return aMsg('اكتب إيميلك فوق، ثم اضغط «نسيت كلمة المرور» مرة ثانية');await FBA.sendPasswordResetEmail(em.trim());aMsg('أرسلنا رابط تغيير كلمة المرور لإيميلك',1)}
   else if(a==='resend'){await authUser.sendEmailVerification();aMsg('أرسلنا الرابط مرة ثانية',1)}
   else if(a==='checked'){await authUser.reload();authUser=FBA.currentUser;if(!authUser.emailVerified)return aMsg('للحين ما تفعّل، افتح الرابط اللي في الإيميل');fbRoute()}
-  else if(a==='claim'){const e=authUser.email.toLowerCase();await FBS.doc('meta/access').set({admins:[e],editors:[],viewers:[]});fbRoute()}
+  else if(a==='claim'){const e=authUser.email.toLowerCase();aMsg('جاري التجهيز…',1);try{await tmo(FBS.doc('meta/access').set({admins:[e],editors:[],viewers:[]}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت: تأكد إن قواعد الحماية انلصقت في Rules واضغطت Publish.':x&&x.code==='timeout'?'ما قدرت أوصل لقاعدة البيانات، تأكد إنك أنشأتها.':'صار خطأ: '+((x&&x.code)||''))}fbRoute()}
   else if(a==='recheck'){authView('loading');fbRoute()}
   else if(a==='out'){await FBA.signOut()}
   else if(a==='reload'){location.reload()}
@@ -1039,17 +1040,18 @@ async function fbRoute(){const u=authUser;
  if(fbStarted){if(!u)location.reload();return}
  if(!u)return authView('login');
  if(!u.emailVerified)return authView('verify');
- let a;try{a=await FBS.doc('meta/access').get()}catch(e){return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
+ authView('loading','جاري التحقق من صلاحيتك…');let a;try{a=await tmo(FBS.doc('meta/access').get(),20000,'timeout')}catch(e){FBDBG=(e&&(e.code||e.message))||'';if(e&&e.code==='timeout')return authView('error','ما قدرت أوصل لقاعدة البيانات. تأكد إنك أنشأت Firestore Database من رابط الخطوة الخامسة، وإن الإنترنت شغال، وبعدها حدّث الصفحة.');return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
  const em=u.email.toLowerCase();if(!a.exists)return authView('first');
  ACC=a.data();ROLE=(ACC.admins||[]).includes(em)?'admin':(ACC.editors||[]).includes(em)?'editor':(ACC.viewers||[]).includes(em)?'viewer':null;
  if(!ROLE)return authView('denied');
  fbStarted=true;AUTHV=null;document.body.classList.remove('authm');ME=em;if(ROLE==='viewer')readOnly=true;
  FBS.doc('meta/access').onSnapshot(s=>{if(s.exists){ACC=s.data();if(ui.view==='settings'&&ready)render()}},()=>{});
  db=wrapFS(FBS);subscribe()}
-async function fbStart(){authView('loading');
- try{await loadFirebase()}catch(e){return authView('error','تعذّر تحميل نظام الحسابات. تأكد من الإنترنت وحدّث الصفحة.')}
- try{firebase.initializeApp(FB);FBA=firebase.auth();FBA.languageCode='ar';FBS=firebase.firestore();try{await FBS.enablePersistence({synchronizeTabs:true})}catch(e){}}catch(e){return authView('error','إعدادات قاعدة البيانات غير صحيحة.')}
- FBA.onAuthStateChanged(u=>{authUser=u;fbRoute()})}
+async function fbStart(){authView('loading','جاري تحميل نظام الحسابات…');
+ try{await tmo(loadFirebase(),25000,'timeout')}catch(e){FBDBG='load: '+((e&&e.code)||'');return authView('error','تعذّر تحميل نظام الحسابات. تأكد من الإنترنت وحدّث الصفحة.')}
+ try{firebase.initializeApp(FB);FBA=firebase.auth();FBA.languageCode='ar';FBS=firebase.firestore();try{await tmo(FBS.enablePersistence({synchronizeTabs:true}),4000,'slow')}catch(e){}}catch(e){FBDBG=(e&&(e.code||e.message))||'';return authView('error','إعدادات قاعدة البيانات غير صحيحة.')}
+ authView('loading','جاري التحقق من الحساب…');const aw=setTimeout(()=>{if(authUser===undefined){FBDBG='auth: no state';authView('error','نظام الدخول ما رد. حدّث الصفحة، وإذا تكرر جرّب متصفح ثاني.')}},20000);
+ FBA.onAuthStateChanged(u=>{clearTimeout(aw);authUser=u;fbRoute()})}
 main.addEventListener('click',e=>{const t=e.target.closest('[data-au]');if(t){e.preventDefault();e.stopImmediatePropagation();authAct(t.dataset.au)}},true);
 main.addEventListener('keydown',e=>{if(e.key==='Enter'&&AUTHV&&(e.target.id==='aPw'||e.target.id==='aEm')){e.preventDefault();authAct('in')}});
 

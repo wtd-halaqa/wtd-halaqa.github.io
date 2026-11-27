@@ -655,9 +655,17 @@ function portalBox(st){const u=portalURL(st),num=waNum(st.phone||'');
 /* ---------- halaqa branding & settings ---------- */
 function applyBrand(t,lg){const b=document.querySelector('.brand');if(!b)return;const title=t||hTitle(),logo=lg!==undefined?lg:(S.cfg.logo||(HIDN()==='wtd'?'logo.png':''));
  const k=title+'|'+logo;if(b.dataset.k===k)return;b.dataset.k=k;if(isFB()&&ready)try{localStorage.setItem('watad-brand-'+HIDN(),JSON.stringify({t:title,l:logo}))}catch(e){}b.innerHTML=(logo?`<img src="${esc(logo)}" alt="">`:'')+'تحضير '+esc(title);document.title='تحضير '+title;logoImg=null;brandManifest(title)}
-function brandManifest(title){if(HIDN()==='wtd')return;const base=location.origin+location.pathname.replace(/[^/]*$/,''),nm='تحضير '+title;
- const m={name:nm,short_name:nm.length>14?title.slice(0,14):nm,start_url:base+'?h='+HIDN(),scope:base,display:'standalone',dir:'rtl',lang:'ar',background_color:'#ffffff',theme_color:'#383735',icons:[{src:base+'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:base+'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
- const l=document.querySelector('link[rel=manifest]');if(l)l.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(m));const t=document.querySelector('meta[name=apple-mobile-web-app-title]');if(t)t.content=nm}
+let BRAND={},BRK='';
+function sqIcon(src,size){return new Promise(res=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,size,size);
+ const k=Math.min(size*.8/i.width,size*.8/i.height),w=i.width*k,h=i.height*k;x.imageSmoothingQuality='high';x.drawImage(i,(size-w)/2,(size-h)/2,w,h);let u=c.toDataURL('image/png');if(u.length>350000)u=c.toDataURL('image/jpeg',.9);res(u)};i.onerror=()=>res('');i.src=src})}
+async function brandManifest(title){if(HIDN()==='wtd')return;const base=location.origin+location.pathname.replace(/[^/]*$/,''),nm='تحضير '+title,src=BRAND.i512||S.cfg.logo||'',key=nm+'|'+src.length+src.slice(-40);
+ if(BRK===key)return;BRK=key;let icons=[{src:base+'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:base+'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}],apple=base+'icon-192.png';
+ if(src){const i512=BRAND.i512||await sqIcon(src,512),i192=await sqIcon(i512,192),i180=await sqIcon(i512,180);if(BRK!==key)return;
+  if(i512&&i192){const ty=u=>u.startsWith('data:image/jpeg')?'image/jpeg':'image/png';icons=[{src:i192,sizes:'192x192',type:ty(i192),purpose:'any'},{src:i512,sizes:'512x512',type:ty(i512),purpose:'any'}];apple=i180||i192}}
+ const m={name:nm,short_name:nm.length>14?title.slice(0,14):nm,start_url:base+'?h='+HIDN(),scope:base,display:'standalone',dir:'rtl',lang:'ar',background_color:'#ffffff',theme_color:'#383735',icons};
+ const l=document.querySelector('link[rel=manifest]');if(l)l.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(m));
+ const t=document.querySelector('meta[name=apple-mobile-web-app-title]');if(t)t.content=nm;const a=document.querySelector('link[rel=apple-touch-icon]');if(a)a.href=apple;
+ let fv=document.querySelector('link[rel=icon]');if(!fv){fv=document.createElement('link');fv.rel='icon';document.head.appendChild(fv)}fv.href=icons[0].src}
 function vHalaqa(){if(!isFB())return '';const d=readOnly?' disabled':'',u=location.origin+location.pathname+'?h='+HIDN();
  let h=`<h2>الحلقة</h2><div class="form" style="grid-template-columns:minmax(0,1fr)"><label class="af">اسم الحلقة: يظهر في الأعلى والتقارير ورسائل أولياء الأمور<input type="text" id="hTitle" value="${esc(S.cfg.title||'')}" placeholder="${esc(HIDN()==='wtd'?'وتد':'مثلاً: حلقة الفرقان')}"${d}></label></div>
  <div class="acts" style="margin-top:8px;align-items:center">${S.cfg.logo?`<img src="${esc(S.cfg.logo)}" alt="الشعار" style="height:52px;border-radius:8px;background:#fff;padding:3px">`:''}${readOnly?'':`<label class="btn g s" style="display:inline-flex;align-items:center;cursor:pointer">${S.cfg.logo?'تغيير الشعار':'رفع شعار الحلقة'}<input type="file" id="hLogo" accept="image/*" hidden></label>${S.cfg.logo?'<button class="btn g s" data-hlogo="x">حذف الشعار</button>':''}`}</div>`;
@@ -666,10 +674,10 @@ function vHalaqa(){if(!isFB())return '';const d=readOnly?' disabled':'',u=locati
 function shrinkImg(file,max){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);let u=c.toDataURL('image/png');if(u.length>90000)u=c.toDataURL('image/jpeg',.85);res(u)};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
 main.addEventListener('change',async e=>{const t=e.target;if(readOnly)return;
  if(t.id==='hTitle'){const v=t.value.trim();if(v===(S.cfg.title||''))return;S.cfg.title=v;saveCfg();log('اسم الحلقة: '+(v||'—'));toast('تم');render();return}
- if(t.id==='hLogo'&&t.files[0]){try{const u=await shrinkImg(t.files[0],180);S.cfg.logo=u;saveCfg();log('تغيير شعار الحلقة');toast('تم رفع الشعار');render()}catch(x){toast('تعذّر قراءة الصورة')}}});
+ if(t.id==='hLogo'&&t.files[0]){try{const f0=t.files[0],u=await shrinkImg(f0,180),big=await shrinkImg(f0,700),ic=await sqIcon(big,512);S.cfg.logo=u;saveCfg();if(ic){BRAND={i512:ic};persist('app/brand',()=>BRAND)}log('تغيير شعار الحلقة');toast('تم رفع الشعار');render()}catch(x){toast('تعذّر قراءة الصورة')}}});
 main.addEventListener('click',async e=>{const t=e.target.closest('[data-hlogo],[data-hcopy]');if(!t)return;
  if(t.dataset.hcopy){try{await navigator.clipboard.writeText(location.origin+location.pathname+'?h='+HIDN());toast('نُسخ الرابط')}catch(x){toast('تعذّر النسخ')}return}
- if(t.dataset.hlogo&&!readOnly){delete S.cfg.logo;saveCfg();log('حذف شعار الحلقة');render()}});
+ if(t.dataset.hlogo&&!readOnly){delete S.cfg.logo;saveCfg();BRAND={};persist('app/brand',()=>({}));log('حذف شعار الحلقة');render()}});
 
 function vSettings(){const d=readOnly?' disabled':'',t=TERM();
  let h='<h1>الإعدادات</h1>'+vAccount()+vHalaqa()+'<h2>النقاط العامة</h2><div class="ptsg">';
@@ -1357,6 +1365,7 @@ function subscribe(){const timer=setTimeout(()=>{if(!ready){stale=true;render()}
  const rer=()=>{if(ready){clearTimeout(timer);stale=false}render()};
  db.doc('app/config').onSnapshot(s=>{if(!s.metadata.fromCache)CFGX=s.exists;if(!pending('app/config'))S.cfg=norm(s.exists?s.data():null);if(!s.metadata.fromCache){loaded.cfg=true;afterLoad()}rer()},err);
  db.doc('app/students').onSnapshot(s=>{if(!pending('app/students')&&s.exists)S.students=clone(s.data().list||[]);if(!s.metadata.fromCache){loaded.st=true;afterLoad()}rer()},err);
+ db.doc('app/brand').onSnapshot(s=>{BRAND=s.exists?(s.data()||{}):{};BRK='';if(ready&&isFB())brandManifest(hTitle())},()=>{});
  db.doc('app/bonus').onSnapshot(s=>{if(!pending('app/bonus')&&s.exists)S.bonus=clone(s.data().list||[]);if(!s.metadata.fromCache){loaded.bn=true;afterLoad()}rer()},err);
  db.doc('app/cases').onSnapshot(s=>{const sv=s.exists?clone(s.data().m||{}):{};
   if(isFB()){const bs=BASE['@cases'],lo={m:S.cases||{}};S.cases=(bs&&fdiff(bs,flat(lo)).length)?(rebase(bs,lo,{m:sv}).m||{}):sv;BASE['@cases']=flat({m:sv})}

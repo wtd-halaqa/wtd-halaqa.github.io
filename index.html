@@ -175,6 +175,17 @@ body.authm nav,body.authm #undo{display:none}
 .cd.nr{border-style:dashed}
 .calk{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:10px;font-size:13px;color:var(--mut)}.calk .cd{display:inline-block;min-height:14px;width:14px;height:14px;padding:0;vertical-align:middle;cursor:default}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
+.case .chd{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:19px}.case .cwhy{margin:4px 0;font-weight:500}.case.closed{opacity:.85}
+.case .acl{margin:6px 0}.tag.warn{background:var(--rd);color:#fff}.csadd{grid-template-columns:170px minmax(0,1fr) auto;margin-top:8px}
+.case.flash{animation:fl 1.6s ease}@keyframes fl{0%,40%{box-shadow:0 0 0 3px var(--ye)}100%{box-shadow:none}}
+@media(max-width:520px){nav{gap:2px}nav a{padding:9px 2px;font-size:14.5px}}
+@media(max-width:640px){.csadd{grid-template-columns:1fr}.csadd button{grid-column:auto}}
+.ins ul{margin:6px 0 0;padding-inline-start:20px}.ins li{margin:3px 0}.ins{border-inline-start:4px solid var(--te)}
+h3.sh{font-size:17px;margin:14px 0 6px}.rk{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:8px;background:var(--c);color:#222;font-weight:700;font-size:14px}
+table.heat td,table.heat th{text-align:center;padding:6px 4px;min-width:34px;font-size:14px}table.heat td{color:#222;font-weight:600}table.heat td.hl{background:repeating-linear-gradient(45deg,var(--card),var(--card) 4px,var(--line) 4px,var(--line) 8px);color:var(--mut)}table.heat .n{text-align:start;white-space:nowrap}
+body.pmode #nav,body.pmode #inst,body.pmode #sst,body.pmode #undo{display:none!important}
+.portal{max-width:760px;margin:0 auto}.phero{display:flex;gap:14px;align-items:center;background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px}.phero img{height:64px;width:auto;border-radius:10px}.phero h1{font-size:clamp(28px,6vw,40px)}
+.plink{background:var(--card);border-radius:10px;padding:8px 12px;font-size:13px;word-break:break-all;color:var(--mut)}
 </style>
 </head>
 <body>
@@ -184,6 +195,7 @@ body.authm nav,body.authm #undo{display:none}
   <nav id="nav">
     <a href="#take" data-v="take">التحضير</a>
     <a href="#stats" data-v="stats">الإحصائيات</a>
+    <a href="#cases" data-v="cases">المتابعة</a>
     <a href="#students" data-v="students">الطلاب</a>
     <a href="#settings" data-v="settings">الإعدادات</a>
   </nav>
@@ -223,7 +235,7 @@ const DEF={points:{sh:8,p:5,l:3,e:0,m:0,a:-5,ty:0,tn:0},alerts:{streak:3,pct:70,
  batches:[{id:'b6',name:'دفعة سادس'},{id:'b5',name:'دفعة خامس'},{id:'b4',name:'دفعة رابع'},{id:'b3',name:'دفعة ثالث'}],
  programs:[{id:'halaqa',name:'الحلقة',days:[0,1,2,3],tasmee:true},{id:'tue',name:'برنامج الثلاثاء',days:[2]},{id:'wkend',name:'برنامج نهاية الأسبوع',days:[4]}]};
 
-let S={cfg:clone(DEF),students:[],all:{},bonus:[],log:[]};
+let S={cfg:clone(DEF),students:[],all:{},bonus:[],log:[],cases:{}};
 let ui={view:'take',term:null,week:null,sess:null,stW:'all',stP:'all',stB:'all',prof:null,q:''};
 let db=null,U=null,ME=null,local=false,readOnly=false,ready=false,stale=false,dl=null,deferRender=false;
 const loaded={cfg:false,st:false,wk:false,bn:false};
@@ -231,8 +243,8 @@ const $=s=>document.querySelector(s);
 const AD='٠١٢٣٤٥٦٧٨٩';
 const ar=s=>String(s).replace(/[0-9]/g,d=>AD[d]).replace(/%/g,'٪');
 const toL=s=>String(s??'').replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776).replace(/[−–]/g,'-');
-function arabize(root){if(root.nodeType===3){const n=root;if(/[0-9%]/.test(n.nodeValue)&&n.parentElement&&!n.parentElement.closest('script,style,textarea'))n.nodeValue=ar(n.nodeValue);return}
- if(root.nodeType!==1||root.closest&&root.closest('script,style'))return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(/[0-9%]/.test(n.nodeValue)&&!n.parentElement.closest('script,style,textarea'))n.nodeValue=ar(n.nodeValue)}}
+function arabize(root){if(root.nodeType===3){const n=root;if(/[0-9%]/.test(n.nodeValue)&&n.parentElement&&!n.parentElement.closest('script,style,textarea,.lat'))n.nodeValue=ar(n.nodeValue);return}
+ if(root.nodeType!==1||root.closest&&root.closest('script,style'))return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(/[0-9%]/.test(n.nodeValue)&&!n.parentElement.closest('script,style,textarea,.lat'))n.nodeValue=ar(n.nodeValue)}}
 new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData')arabize(m.target);else m.addedNodes.forEach(arabize)}}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 arabize(document.body);
 const HF=(()=>{try{return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{day:'numeric',month:'numeric',year:'numeric'})}catch(e){return null}})();
@@ -256,7 +268,7 @@ function ask(msg,ok='تأكيد'){return new Promise(res=>{const o=document.crea
 /* ---------- persistence ---------- */
 const LS='watad-attendance-v1';
 let lsWarned=false;function lsSave(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){if(!lsWarned){lsWarned=true;toast('تعذّر الحفظ في هذا الجهاز: مساحة المتصفح ممتلئة أو التصفح الخفي مفعّل')}}}
-function lsLoad(){try{const v=JSON.parse(localStorage.getItem(LS)||'null');if(v&&v.cfg){S=Object.assign({students:[],all:{},bonus:[],log:[]},v);
+function lsLoad(){try{const v=JSON.parse(localStorage.getItem(LS)||'null');if(v&&v.cfg){S=Object.assign({students:[],all:{},bonus:[],log:[],cases:{}},v);
  if(v.weeks&&!v.all){S.all={};Object.keys(v.weeks).forEach(n=>S.all['w'+n]=v.weeks[n]);delete S.weeks}}}catch(e){}}
 const Q={};
 function persist(path,get){if(readOnly)return;if(local||!db){stampPath(path);lsSave();syncSoon();return}
@@ -272,6 +284,7 @@ const pending=p=>{const q=Q[p];return !!q&&(q.busy||q.dirty)};
 const saveCfg=()=>persist('app/config',()=>S.cfg);
 const saveSt=()=>persist('app/students',()=>({list:S.students}));
 const saveBn=()=>persist('app/bonus',()=>({list:S.bonus}));
+const saveCs=()=>persist('app/cases',()=>({m:S.cases||{}}));
 
 /* audit log */
 const LG={},LOCALLOG={};let NAMES={},nameWait=new Set();
@@ -333,11 +346,11 @@ function alerts(){const A=S.cfg.alerts,out=[],from=addD(today0(),-29);
   if(r.length)out.push({st,r,streak,pct})});
  return out.sort((a,b)=>b.streak-a.streak||(a.pct??100)-(b.pct??100))}
 function alertsBox(open){const al=alerts();if(!al.length)return '';
- return `<details class="alerts"${open?' open':''}><summary>تنبيهات (${al.length})</summary>${al.map(a=>`<div class="al"><button class="lnk" data-prof="${esc(a.st.id)}"><b>${esc(a.st.name)}</b></button><span class="mut">${esc(batchName(a.st.b))} · ${a.r.map(esc).join(' · ')}</span></div>`).join('')}</details>`}
+ return `<details class="alerts"${open?' open':''}><summary>تنبيهات (${al.length})</summary>${al.map(a=>`<div class="al"><button class="lnk" data-prof="${esc(a.st.id)}"><b>${esc(a.st.name)}</b></button><span class="mut">${esc(batchName(a.st.b))} · ${a.r.map(esc).join(' · ')}</span>${openCase(a.st.id)?'<span class="tag">تحت المتابعة</span>':readOnly?'':`<button class="xb" data-csnew="${esc(a.st.id)}">فتح حالة متابعة</button>`}</div>`).join('')}</details>`}
 function termSel(){if(S.cfg.terms.length<2)return '';return `<div class="tsel"><span class="mut">الفصل:</span><select id="term" aria-label="الفصل الدراسي">${S.cfg.terms.map(t=>`<option value="${esc(t.id)}"${t.id===TERM().id?' selected':''}>${esc(t.name)}${t.id===S.cfg.cur?' (الحالي)':''}</option>`).join('')}</select></div>`}
 
 /* ---------- views ---------- */
-function render(){if(AUTHV){main.innerHTML=AUTHV;return}const a=document.activeElement;
+function render(){if(PORTALV){main.innerHTML=PORTALV;return}if(ready)applyBrand();if(AUTHV){main.innerHTML=AUTHV;return}const a=document.activeElement;
  if(a&&main.contains(a)&&a.matches('input[type=text],input[type=number],textarea')){deferRender=true;return}
  deferRender=false;
  if(!ready&&!stale){main.innerHTML='<div class="empty">جاري التحميل…</div>';return}
@@ -348,8 +361,8 @@ function render(){if(AUTHV){main.innerHTML=AUTHV;return}const a=document.activeE
  h+=tipBox();if(isFB()&&ROLE==='admin'&&REQS.length&&ui.view==='take')h+=`<div class="note tip"><span>فيه ${REQS.length} طلب انضمام ينتظر موافقتك.</span><a class="btn s" href="#settings" style="text-decoration:none;display:inline-flex;align-items:center">عرض الطلبات</a></div>`;
  if(readOnly)h+='<div class="note">وضع القراءة فقط: لا تملك صلاحية التعديل.</div>';
  if(stale)h+='<div class="note">تعذّر الوصول للبيانات حالياً، قد تكون غير محدّثة.</div>';
- h+=({take:vTake,stats:vStats,students:vStudents,settings:vSettings}[ui.view])();
- main.innerHTML=h;main.classList.toggle('locked',ui.view==='take'&&!!ui.week&&isLocked(ui.week));showUndo();applySearch();if(ui.view==='take')main.querySelectorAll('.strip .chip.on').forEach(c=>{const st=c.parentElement;st.scrollLeft+=c.getBoundingClientRect().left-st.getBoundingClientRect().left-(st.clientWidth-c.clientWidth)/2});if(ui.prof)drawProfile();if(ui.view==='settings')resolveNames(allLogs().slice(0,300).map(x=>x.u))}
+ h+=({take:vTake,stats:vStats,cases:vCases,students:vStudents,settings:vSettings}[ui.view])();
+ main.innerHTML=h;main.classList.toggle('locked',ui.view==='take'&&!!ui.week&&isLocked(ui.week));showUndo();applySearch();if(ui.view==='take')main.querySelectorAll('.strip .chip.on').forEach(c=>{const st=c.parentElement;st.scrollLeft+=c.getBoundingClientRect().left-st.getBoundingClientRect().left-(st.clientWidth-c.clientWidth)/2});if(ui.prof)drawProfile();if(ui.view==='settings')resolveNames(allLogs().slice(0,300).map(x=>x.u));portalSoon()}
 
 function applySearch(){const q=nAr(toL(ui.q||''));document.querySelectorAll('#main .row[data-n]').forEach(r=>r.hidden=!!q&&!nAr(r.dataset.n).includes(q));
  document.querySelectorAll('#main .grp[data-g]').forEach(g=>g.hidden=!!q&&!g.querySelector('.row:not([hidden])'))}
@@ -383,7 +396,7 @@ function vTake(){
  const cnt={};let tot=0,ty=0,tn=0;ST.forEach(x=>cnt[x.k]=0);
  act.forEach(st=>{const k=r[st.id];if(k&&cnt[k]!==undefined){cnt[k]++;tot+=ptsOf(k,s.pid)}if(s.tasmee&&ATT.has(k)){if(tz[st.id]==='y')ty++;if(tz[st.id]==='n')tn++;tot+=tasPts(tz[st.id])}});
  h+=`<section class="panel"><div class="phead"><div><h1>${esc(s.pname)} · ${DAYS[s.day]} ${fmt(dayDate(n,s.day))}</h1><div class="mut">الأسبوع ${n} · سُجّل ${done(n,s.key)} من ${act.length}</div></div>
- <div class="acts">${readOnly?'':'<button class="btn edit" data-act="fillall">الكل حاضر</button>'}<button class="btn g" data-act="expsess">صورة / بي دي إف</button>${Object.values(r).includes('a')?'<button class="btn g" data-act="absmsgs">رسائل الغياب</button>':''}<button class="btn g s" data-act="expweek">تقرير الأسبوع</button><button class="btn g s" data-act="blank">كشف للطباعة</button>${readOnly?'':'<button class="btn g s edit" data-act="cancelsess">إلغاء اليوم</button><button class="btn g s edit" data-act="holiday">إلغاء الأسبوع</button><button class="btn dg s edit" data-act="clearsess">مسح التحضير</button>'}</div></div>
+ <div class="acts">${readOnly?'':'<button class="btn edit" data-act="fillall">الكل حاضر</button>'}<button class="btn g" data-act="expsess">صورة / بي دي إف</button>${Object.values(r).includes('a')?'<button class="btn g" data-act="absmsgs">رسائل الغياب</button>':''}<button class="btn g s" data-act="expweek">تقرير الأسبوع</button><button class="btn g s" data-pmsgs="1">رسائل أولياء الأمور</button><button class="btn g s" data-act="blank">كشف للطباعة</button>${readOnly?'':'<button class="btn g s edit" data-act="cancelsess">إلغاء اليوم</button><button class="btn g s edit" data-act="holiday">إلغاء الأسبوع</button><button class="btn dg s edit" data-act="clearsess">مسح التحضير</button>'}</div></div>
  <div class="sum">${ST.map(x=>`<span class="pill" style="--c:${x.hex}"><span class="dot"></span>${x.l}: ${cnt[x.k]}</span>`).join('')}${s.tasmee?TAS.map(x=>`<span class="pill" style="--c:${x.hex}"><span class="dot"></span>${x.l}: ${x.k==='y'?ty:tn}</span>`).join(''):''}<span class="pill">مجموع النقاط: ${tot}</span></div>
  <div class="srch"><input type="text" id="q" placeholder="ابحث عن طالب…" value="${esc(ui.q)}" autocomplete="off" aria-label="بحث"></div>`;
  grouped(act).forEach(g=>{if(!g.items.length)return;
@@ -420,19 +433,75 @@ function periodAgg(from,to){let n=0,att=0,a=0;
 function cmpCard(title,cur,prev,labA,labB){let d='';if(cur.pct!=null&&prev.pct!=null){const x=Math.round((cur.pct-prev.pct)*100);d=x>0?`<span class="up">▲ ${x}٪</span>`:x<0?`<span class="dn">▼ ${-x}٪</span>`:'<span class="mut">بدون تغيير</span>'}
  return `<div class="kpi"><small>${title}</small><b>${pctT(cur.pct)}</b>${d} <span class="mut">مقابل ${pctT(prev.pct)} ${labB}</span><small>غياب: ${cur.a} (${labA}) مقابل ${prev.a}</small></div>`}
 
+/* ---------- smart analytics ---------- */
+function wkStats(){const pf=ui.stP,bf=ui.stB,ws=[];
+ for(let n=1;n<=NW();n++){if(isHol(n))continue;const per={};let tn=0,ta=0;
+  active(n).forEach(s=>{if(pf!=='all'&&s.pid!==pf)return;const r=recOf(n,s.key);
+   for(const sid in r){const st=stu(sid);if(!st||st.arch||(bf!=='all'&&st.b!==bf))continue;const k=r[sid],o=per[sid]||(per[sid]={n:0,a:0,ab:0,e:0});
+    o.n++;tn++;if(ATT.has(k)){o.a++;ta++}if(k==='a')o.ab++;if(k==='e')o.e++}});
+  if(tn)ws.push({n,per,tn,ta,pct:ta/tn})}return ws}
+function sumW(list,sid){const o={n:0,a:0,ab:0,e:0};list.forEach(w=>{const x=w.per[sid];if(x){o.n+=x.n;o.a+=x.a;o.ab+=x.ab;o.e+=x.e}});return o}
+const totW=list=>{let n=0,a=0;list.forEach(w=>{n+=w.tn;a+=w.ta});return n?a/n:null};
+const nSt=n=>ar(n)+' '+(n>=3&&n<=10?'طلاب':'طالب');
+const p100=v=>Math.round(v*100)+'٪';
+function heatC(v){const L=[[224,79,63],[252,190,20],[47,191,203]];const t=Math.max(0,Math.min(1,(v-.5)/.5)),i=t<.5?0:1,u=t<.5?t*2:(t-.5)*2;const c=L[i].map((x,j)=>Math.round(x+(L[i+1][j]-x)*u));return `rgb(${c})`}
+function smart(){const ws=wkStats(),rec=ws.slice(-4),prv=ws.slice(-8,-4),out={ws,rec,prv,risk:[],up:[],ins:[]};
+ AS().filter(st=>ui.stB==='all'||st.b===ui.stB).forEach(st=>{const r=sumW(rec,st.id),p=sumW(prv,st.id);if(r.n<2)return;
+  const rp=r.a/r.n,pp=p.n>=2?p.a/p.n:null,tl=timeline(st.id);let streak=0;for(let i=tl.length-1;i>=0&&tl[i].k==='a';i--)streak++;
+  const drop=pp!=null?pp-rp:0,tags=[];let sc=(1-rp)*60+Math.max(0,drop)*80+streak*8+r.e*2;
+  if(rp<.75)tags.push('حضوره آخر '+ar(rec.length)+' أسابيع '+p100(rp));
+  if(drop>=.15)tags.push('نزل '+p100(drop)+' عن قبل');
+  if(streak>=2)tags.push('غاب '+ar(streak)+' مرات متتالية');
+  if(r.e>=3)tags.push(ar(r.e)+' أعذار مؤخراً');
+  if(sc>=20&&tags.length)out.risk.push({st,sc,tags,rp});
+  if(pp!=null&&rp-pp>=.1)out.up.push({st,d:rp-pp,rp,pp})});
+ out.risk.sort((a,b)=>b.sc-a.sc);out.up.sort((a,b)=>b.d-a.d);
+ const tr=totW(rec),tp=totW(prv);
+ if(tr!=null)out.ins.push('الحضور آخر '+ar(rec.length)+' أسابيع '+p100(tr)+(tp!=null?(Math.abs(tr-tp)<.02?'، نفس مستوى الأسابيع اللي قبلها تقريباً.':tr>tp?'، أعلى بـ '+p100(tr-tp)+' من الأسابيع اللي قبلها.':'، أقل بـ '+p100(tp-tr)+' من الأسابيع اللي قبلها.'):'.'));
+ if(ui.stB==='all'){const bp=S.cfg.batches.map(b=>{let n=0,a=0;ws.forEach(w=>{for(const sid in w.per){const st=stu(sid);if(st&&st.b===b.id){n+=w.per[sid].n;a+=w.per[sid].a}}});return {b,v:n?a/n:null}}).filter(x=>x.v!=null).sort((x,y)=>y.v-x.v);
+  if(bp.length>1&&bp[0].v-bp[bp.length-1].v>=.03)out.ins.push('أعلى دفعة حضوراً '+bp[0].b.name+' ('+p100(bp[0].v)+')، وأقلها '+bp[bp.length-1].b.name+' ('+p100(bp[bp.length-1].v)+').')}
+ const aft=ws.filter(w=>w.n>1&&isHol(w.n-1)),oth=ws.filter(w=>!(w.n>1&&isHol(w.n-1)));
+ if(aft.length&&oth.length>=2){const a=totW(aft),o=totW(oth),d=o-a;out.hol={a,o,n:aft.length};
+  out.ins.push(d>=.03?'الأسبوع اللي بعد الإجازة ينزل فيه الحضور '+p100(d)+' عن المعتاد، يستاهل تذكير قبل نهاية الإجازة.':d<=-.03?'الحضور بعد الإجازات أعلى من المعتاد بـ '+p100(-d)+'.':'الحضور بعد الإجازات نفس المعتاد تقريباً.')}
+ const fall=out.risk.filter(x=>x.tags.some(t=>t.startsWith('نزل'))).length;if(fall)out.ins.push(nSt(fall)+' نزل حضورهم بشكل واضح مؤخراً، تلقاهم في قائمة «يحتاجون انتباه».');
+ if(out.up.length)out.ins.push(nSt(out.up.length)+' تحسّن حضورهم، أبرزهم '+out.up[0].st.name+' ('+p100(out.up[0].pp)+' ← '+p100(out.up[0].rp)+').');
+ return out}
+function insBox(X){if(!X.ins.length)return '';return `<div class="panel ins"><b>ملاحظات ذكية</b><ul>${X.ins.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`}
+function smartBox(X){const {ws}=X;if(ws.length<2)return '<h2>التحليل الذكي</h2><p class="mut">يظهر التحليل بعد تسجيل أسبوعين على الأقل.</p>';
+ let h='<h2>التحليل الذكي</h2><p class="mut" style="margin:-4px 0 10px">يقارن آخر '+ar(X.rec.length)+' أسابيع مسجّلة بالأربعة اللي قبلها، للفصل كامل وحسب البرنامج والدفعة المختارة.</p><div class="two"><div>';
+ h+=`<h3 class="sh">يحتاجون انتباه (${X.risk.length})</h3>`;
+ if(!X.risk.length)h+='<p class="mut">ما فيه أحد مقلق حالياً، الحمد لله.</p>';
+ X.risk.slice(0,10).forEach((x,i)=>{const oc=typeof openCase==='function'&&openCase(x.st.id);
+  h+=`<div class="al"><span class="rk" style="--c:${heatC(x.rp)}">${ar(i+1)}</span><button class="lnk" data-prof="${esc(x.st.id)}"><b>${esc(x.st.name)}</b></button><span class="mut">${x.tags.map(esc).join(' · ')}</span>${oc?'<span class="tag">تحت المتابعة</span>':readOnly||typeof openCase!=='function'?'':`<button class="xb" data-csnew="${esc(x.st.id)}">فتح حالة</button>`}</div>`});
+ h+=`</div><div><h3 class="sh">الأكثر تحسّناً (${X.up.length})</h3>`;
+ if(!X.up.length)h+='<p class="mut">ما فيه تحسّن واضح للحين.</p>';
+ X.up.slice(0,8).forEach(x=>{h+=`<div class="al"><button class="lnk" data-prof="${esc(x.st.id)}"><b>${esc(x.st.name)}</b></button><span class="mut">${p100(x.pp)} ← ${p100(x.rp)}</span><span class="up">▲ ${p100(x.d)}</span></div>`});
+ h+='</div></div>';
+ const bs=S.cfg.batches.filter(b=>ui.stB==='all'||b.id===ui.stB);
+ h+='<h3 class="sh">خريطة الحضور: الدفعات × الأسابيع</h3><div class="scroll"><table class="heat"><thead><tr><th class="n">الدفعة</th>';
+ for(let n=1;n<=NW();n++)h+=`<th>${ar(n)}</th>`;h+='</tr></thead><tbody>';
+ bs.forEach(b=>{h+=`<tr><td class="n">${esc(b.name)}</td>`;for(let n=1;n<=NW();n++){if(isHol(n)){h+='<td class="hl" title="إجازة">—</td>';continue}
+   const w=ws.find(x=>x.n===n);let tn=0,ta=0;if(w)for(const sid in w.per){const st=stu(sid);if(st&&st.b===b.id){tn+=w.per[sid].n;ta+=w.per[sid].a}}
+   h+=tn?`<td style="background:${heatC(ta/tn)}">${Math.round(ta/tn*100)}</td>`:'<td></td>'}h+='</tr>'});
+ h+='</tbody></table></div><p class="mut" style="margin-top:4px">الأرقام هي نسبة الحضور. الأحمر أقل من ٦٠٪، والأصفر حوالي ٧٥٪، والفيروزي فوق ٩٠٪.</p>';
+ if(S.cfg.terms.length>1){const keep=ui.term;h+='<h3 class="sh">مقارنة الفصول</h3>';
+  S.cfg.terms.forEach(t=>{ui.term=t.id;const {rows}=calc({stW:'all',stP:ui.stP,stB:ui.stB});let n=0,a=0;rows.forEach(r=>{n+=r.n;a+=r.sh+r.p+r.l});
+   h+=`<div class="hb"><span>${esc(t.name)}</span><span class="tr"><i style="width:${n?Math.round(a/n*100):0}%"></i></span><span>${n?pctT(a/n):'—'}</span></div>`});ui.term=keep}
+ return h}
+
 function vStats(){const {rows,sessCount,weekPct}=calc();
  const T={n:0,att:0,pts:0};rows.forEach(r=>{T.n+=r.n;T.att+=r.sh+r.p+r.l;T.pts+=r.pts});
- const top=rows.find(r=>r.n||r.bp);
+ const top=rows.find(r=>r.n||r.bp);const X=smart();
  let h=termSel()+'<h1>إحصائيات الحضور</h1>'+alertsBox(true)+'<div class="filters" style="margin-top:12px">';
  h+=`<select id="fW" aria-label="الأسبوع"><option value="all">كل الأسابيع</option>${Array.from({length:NW()},(_,i)=>`<option value="${i+1}"${ui.stW==i+1?' selected':''}>الأسبوع ${i+1}${isHol(i+1)?' (إجازة)':''}</option>`).join('')}</select>`;
  h+=`<select id="fP" aria-label="البرنامج"><option value="all">كل البرامج</option>${S.cfg.programs.map(p=>`<option value="${esc(p.id)}"${ui.stP===p.id?' selected':''}>${esc(p.name)}</option>`).join('')}</select>`;
  h+=`<select id="fB" aria-label="الدفعة"><option value="all">كل الدفعات</option>${S.cfg.batches.map(b=>`<option value="${esc(b.id)}"${ui.stB===b.id?' selected':''}>${esc(b.name)}</option>`).join('')}</select>`;
  h+=`<div class="acts"><button class="btn" data-act="expstats">صورة / بي دي إف</button><button class="btn g" data-act="expterm">تقرير الفصل</button><button class="btn g" data-act="xlsx">إكسل</button></div></div>`;
  h+=`<div class="kpis"><div class="kpi"><b>${pctT(T.n?T.att/T.n:null)}</b>نسبة الحضور</div><div class="kpi"><b>${sessCount}</b>جلسة مسجّلة</div><div class="kpi"><b>${rows.length?Math.round(T.pts/rows.length):0}</b>متوسط النقاط للطالب</div><div class="kpi"><b style="font-size:24px;line-height:1.5">${top?esc(top.s.name):'—'}</b>الأعلى نقاطاً${top?' ('+top.pts+')':''}</div></div>`;
- if(!T.n)h+='<div class="empty">لا يوجد تحضير مسجّل لهذا الاختيار بعد.</div>';
+ h+=insBox(X);if(!T.n)h+='<div class="empty">لا يوجد تحضير مسجّل لهذا الاختيار بعد.</div>';
  h+=`<div class="scroll"><table><thead><tr><th>#</th><th class="n">الطالب</th><th>الدفعة</th>${ST.map(x=>`<th>${x.s}</th>`).join('')}<th>سمّع</th><th>الحضور</th><th>إضافي</th><th>النقاط</th></tr></thead><tbody>`;
  rows.forEach((r,i)=>{h+=`<tr><td>${i+1}</td><td class="n"><button class="lnk" data-prof="${esc(r.s.id)}">${esc(r.s.name)}</button>${r.s.arch?' <span class="tag">مؤرشف</span>':''}</td><td>${esc(batchName(r.s.b))}</td>${ST.map(x=>`<td>${r[x.k]||''}</td>`).join('')}<td>${r.ty||r.tn?r.ty+'/'+(r.ty+r.tn):''}</td><td>${pctT(r.pct)}</td><td>${r.bp?sgn(r.bp):''}</td><td class="big"${r.pts<0?' style="color:var(--rd)"':''}>${num(r.pts)}</td></tr>`});
- h+='</tbody></table></div>';
+ h+='</tbody></table></div>'+smartBox(X);
  const t0=today0(),cw=Math.min(weekByDate(),NW()),ws=dayDate(cw,0);
  h+=`<h2>مقارنة الفترات</h2><div class="cmp">${cmpCard('هذا الأسبوع',periodAgg(ws,addD(ws,7)),periodAgg(addD(ws,-7),ws),'هذا الأسبوع','الأسبوع الماضي')}${cmpCard('آخر ٣٠ يوماً',periodAgg(addD(t0,-29),addD(t0,1)),periodAgg(addD(t0,-59),addD(t0,-29)),'آخر ٣٠ يوماً','الثلاثين قبلها')}</div>`;
  h+='<div class="two"><div><h2>الحضور حسب الدفعة</h2>';
@@ -465,8 +534,137 @@ function vStudents(){const act=AS(),arch=S.students.filter(s=>s.arch);
  <div class="panel"><b>ترقية الدفعات لسنة جديدة</b><p class="mut" style="margin:4px 0 10px">كل دفعة تنتقل للتي فوقها في الترتيب، وطلاب الدفعة الأعلى يُؤرشفون كمتخرّجين. السجل القديم محفوظ.</p><button class="btn" data-act="promote">ترقية الدفعات</button></div>`;
  return h}
 
+/* ---------- follow-up cases ---------- */
+const CT={call:'اتصال بولي الأمر',msg:'رسالة لولي الأمر',meet:'جلسة مع الطالب',visit:'زيارة',other:'أخرى'};
+const whoN=u=>(u&&NAMES[u])||(u&&typeof ACC!=='undefined'&&ACC&&ACC.names&&ACC.names[u])||(u&&String(u).includes('@')?String(u).split('@')[0]:'')||(local&&u)||'';
+const csList=()=>Object.entries(S.cases||{}).filter(([id,c])=>c&&c.sid).map(([id,c])=>Object.assign({},c,{id}));
+const openCase=sid=>csList().find(c=>c.sid===sid&&c.st!=='c');
+const actsOf=c=>Object.entries(c.acts||{}).filter(([i,a])=>a&&a.t).map(([id,a])=>Object.assign({},a,{id})).sort((x,y)=>x.t-y.t);
+const lastT=c=>Math.max(c.t||0,...actsOf(c).map(a=>a.t));
+const csLate=c=>c.st!=='c'&&Date.now()-lastT(c)>7*864e5;
+function attSplit(sid,t0){const d0=new Date(t0);d0.setHours(0,0,0,0);const tl=timeline(sid),f=a=>a.length?a.filter(x=>ATT.has(x.k)).length/a.length:null;
+ const b=tl.filter(x=>x.date<d0),a=tl.filter(x=>x.date>=d0);return {b:f(b.slice(-12)),a:f(a),an:a.length}}
+function newCase(sid,why){const al=alerts().find(a=>a.st.id===sid);const id=uid();
+ S.cases=S.cases||{};S.cases[id]={sid,why:why||(al?al.r.join('، '):''),st:'o',t:Date.now(),by:ME||'',acts:{}};saveCs();
+ log('فتح حالة متابعة للطالب '+((stu(sid)||{}).name||''));toast('فُتحت حالة متابعة');return id}
+function goCase(id){ui.csFocus=id;if(ui.view==='cases'){render();csFocusNow()}else location.hash='cases'}
+function csFocusNow(){const id=ui.csFocus;if(!id||ui.view!=='cases')return;ui.csFocus=null;setTimeout(()=>{const el=document.getElementById('cs-'+id);if(!el)return;el.scrollIntoView({block:'center'});el.classList.add('flash');const i=el.querySelector('[data-csx]');if(i&&matchMedia('(hover:hover)').matches)i.focus({preventScroll:true})},30)}
+function caseCard(c){const st=stu(c.sid)||{name:'طالب محذوف',b:''},A=actsOf(c),sp=attSplit(c.sid,c.t),open=c.st!=='c',by=whoN(c.by);
+ const eff=sp.an?`الحضور منذ فتح الحالة: <b>${pctT(sp.a)}</b>${sp.b!=null?` <span class="mut">(كان ${pctT(sp.b)} قبلها)</span>`:''}${sp.b!=null&&sp.a!=null?(sp.a>sp.b+.04?' <span class="up">▲ تحسّن</span>':sp.a<sp.b-.04?' <span class="dn">▼ تراجع</span>':''):''}`:'<span class="mut">ما فيه تحضير بعد فتح الحالة للحين.</span>';
+ let h=`<div class="panel case${open?'':' closed'}" id="cs-${esc(c.id)}"><div class="chd"><button class="lnk" data-prof="${esc(c.sid)}"><b>${esc(st.name)}</b></button><span class="mut">${esc(batchName(st.b))}</span>${csLate(c)?'<span class="tag warn">تحتاج إجراء</span>':''}${open?'':'<span class="tag">مغلقة</span>'}</div>
+ ${c.why?`<div class="cwhy">${esc(c.why)}</div>`:''}<div class="mut">فُتحت ${hfull(new Date(c.t))}${by?' · '+esc(by):''}${open?'':' · أُغلقت '+hfull(new Date(c.ct||Date.now()))}</div>${!open&&c.res?`<div><b>النتيجة:</b> ${esc(c.res)}</div>`:''}<div style="margin:6px 0">${eff}</div>`;
+ if(A.length)h+='<div class="acl">'+A.map(a=>{const w=whoN(a.by);return `<div class="al"><span class="tag">${esc(CT[a.ty]||'إجراء')}</span><span>${esc(a.x||'')}</span><span class="mut">${hfull(new Date(a.t))}${w?' · '+esc(w):''}</span>${readOnly||!open?'':`<button class="xb" data-csdx="${esc(c.id+'|'+a.id)}" aria-label="حذف الإجراء">حذف</button>`}</div>`}).join('')+'</div>';
+ else if(open)h+='<p class="mut" style="margin:4px 0">ما سُجّل أي إجراء للحين.</p>';
+ if(!readOnly){if(open){const num=waNum(st.phone);
+  h+=`<div class="form csadd"><select data-cstype="${esc(c.id)}" aria-label="نوع الإجراء">${Object.keys(CT).map(k=>`<option value="${k}">${CT[k]}</option>`).join('')}</select><input type="text" data-csx="${esc(c.id)}" placeholder="وش صار؟ مثلاً: اتصلت بالوالد ووعد يتابعه" aria-label="تفاصيل الإجراء" autocomplete="off"><button class="btn s" data-csadd="${esc(c.id)}">تسجيل الإجراء</button></div>
+  <div class="acts" style="margin-top:8px">${num?`<a class="btn g s" style="display:inline-flex;align-items:center;text-decoration:none" href="https://wa.me/${num}" target="_blank" rel="noopener">واتساب ولي الأمر</a><a class="btn g s" style="display:inline-flex;align-items:center;text-decoration:none" href="tel:${esc(st.phone)}">اتصال</a>`:''}<button class="btn g s" data-csclose="${esc(c.id)}">إغلاق الحالة</button></div>`}
+  else h+=`<div class="acts" style="margin-top:8px"><button class="btn g s" data-csre="${esc(c.id)}">إعادة فتح</button><button class="btn dg s" data-csdel="${esc(c.id)}">حذف الحالة</button></div>`}
+ return h+'</div>'}
+function vCases(){const L=csList(),op=L.filter(c=>c.st!=='c').sort((a,b)=>lastT(a)-lastT(b)),cl=L.filter(c=>c.st==='c').sort((a,b)=>(b.ct||0)-(a.ct||0));
+ let h='<h1>حالات المتابعة</h1><p class="mut" style="margin:6px 0 0">افتح حالة لكل طالب يحتاج متابعة، وسجّل كل إجراء تسويه، وشوف أثره على حضوره، ثم أغلقها.</p>';
+ h+=`<div class="kpis"><div class="kpi"><b>${op.length}</b>حالة مفتوحة</div><div class="kpi"><b>${op.filter(csLate).length}</b>تحتاج إجراء (أكثر من أسبوع بدون إجراء)</div><div class="kpi"><b>${cl.length}</b>حالة مغلقة</div></div>`;
+ const sug=alerts().filter(a=>!openCase(a.st.id));
+ if(sug.length&&!readOnly)h+=`<h2>مقترح فتح حالة لهم (${sug.length})</h2><div class="panel" style="margin-top:0">${sug.map(a=>`<div class="al"><button class="lnk" data-prof="${esc(a.st.id)}"><b>${esc(a.st.name)}</b></button><span class="mut">${esc(batchName(a.st.b))} · ${a.r.map(esc).join(' · ')}</span><button class="xb" data-csnew="${esc(a.st.id)}">فتح حالة</button></div>`).join('')}</div>`;
+ if(!readOnly)h+=`<details class="edit" style="margin-top:14px"${L.length?'':' open'}><summary>فتح حالة لطالب آخر</summary><form class="form" id="csForm" style="grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;margin-top:8px"><select id="csSid" aria-label="الطالب">${grouped(AS()).filter(g=>g.items.length).map(g=>`<optgroup label="${esc(g.b.name)}">${g.items.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</optgroup>`).join('')}</select><input type="text" id="csWhy" placeholder="سبب المتابعة: تأخر متكرر، ظرف عائلي…" aria-label="سبب المتابعة" autocomplete="off"><button class="btn">فتح حالة</button></form></details>`;
+ h+=`<h2>المفتوحة (${op.length})</h2>`;if(!op.length)h+='<p class="mut">لا توجد حالات مفتوحة.</p>';op.forEach(c=>h+=caseCard(c));
+ if(cl.length)h+=`<details style="margin-top:18px"><summary>المغلقة (${cl.length})</summary>${cl.map(caseCard).join('')}</details>`;
+ return h}
+async function csClick(e){const t=e.target.closest('[data-csnew],[data-csadd],[data-csclose],[data-csre],[data-csdel],[data-csdx]');if(!t)return;e.preventDefault();if(readOnly)return;const D=t.dataset;
+ if(D.csnew){const ex=openCase(D.csnew);goCase(ex?ex.id:newCase(D.csnew));return}
+ const id=D.csadd||D.csclose||D.csre||D.csdel||(D.csdx||'').split('|')[0],c=S.cases[id];if(!c)return;const nm=(stu(c.sid)||{}).name||'';
+ if(D.csadd){const i=main.querySelector(`[data-csx="${CSS.escape(id)}"]`),ty=main.querySelector(`[data-cstype="${CSS.escape(id)}"]`).value,x=(i.value||'').trim();
+  if(!x&&ty==='other'){toast('اكتب وش صار');i.focus();return}const aid=uid();c.acts=c.acts||{};c.acts[aid]={t:Date.now(),by:ME||'',ty,x};i.value='';i.blur();saveCs();log('إجراء متابعة ('+CT[ty]+') للطالب '+nm);toast('تم تسجيل الإجراء');render();return}
+ if(D.csclose){const i=main.querySelector(`[data-csx="${CSS.escape(id)}"]`),x=((i&&i.value)||'').trim();
+  if(!await ask('إغلاق حالة متابعة '+nm+'؟'+(x?'\nالنتيجة: '+x:'\nتقدر تكتب النتيجة في خانة الإجراء قبل الإغلاق.'),'إغلاق الحالة'))return;
+  c.st='c';c.ct=Date.now();if(x)c.res=x;if(i)i.value='';saveCs();log('إغلاق حالة متابعة '+nm);toast('أُغلقت الحالة');render();return}
+ if(D.csre){if(openCase(c.sid)){toast('عنده حالة مفتوحة من قبل');return}c.st='o';delete c.ct;delete c.res;saveCs();log('إعادة فتح حالة متابعة '+nm);render();goCase(id);return}
+ if(D.csdel){if(!await ask('حذف حالة '+nm+' وكل إجراءاتها نهائياً؟','حذف'))return;delete S.cases[id];saveCs();log('حذف حالة متابعة '+nm);render();return}
+ if(D.csdx){const aid=D.csdx.split('|')[1];if(!await ask('حذف هذا الإجراء؟','حذف'))return;if(c.acts)delete c.acts[aid];saveCs();render()}}
+main.addEventListener('click',csClick);
+main.addEventListener('click',e=>{if(e.target.closest('[data-pmsgs]')){e.preventDefault();openParentMsgs()}});
+main.addEventListener('submit',e=>{if(e.target.id!=='csForm')return;e.preventDefault();e.stopImmediatePropagation();if(readOnly)return;const sid=$('#csSid').value,why=$('#csWhy').value.trim();if(!sid)return;
+ const ex=openCase(sid);if(ex){toast('عنده حالة مفتوحة');goCase(ex.id);return}$('#csWhy').blur();goCase(newCase(sid,why||'متابعة'))},true);
+main.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-csx]')){e.preventDefault();const b=main.querySelector(`[data-csadd="${CSS.escape(e.target.dataset.csx)}"]`);b&&b.click()}});
+
+/* ---------- parent portal ---------- */
+let PORTALV=null,pT=0;const PTOK=location.hash.startsWith('#p-')?decodeURIComponent(location.hash.slice(3)):null;
+const HIDN=()=>(typeof HIDV!=='undefined'&&HIDV)||'wtd';
+const hTitle=()=>((S.cfg.title||'').trim()||'وتد');
+const PH=(()=>{try{return JSON.parse(localStorage.getItem('watad-ph')||'{}')}catch(e){return {}}})();
+const ptok=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>'abcdefghijkmnpqrstuvwxyz23456789'[b%32]).join('');
+function portalURL(st){if(!st)return '';if(isFB())return st.portal?location.origin+location.pathname+'#p-'+st.portal:'';return location.origin+location.pathname+'#p-'+encodeURIComponent(st.id)}
+function pDataAll(list){const keep=ui.term;ui.term=S.cfg.cur;try{const rows=calc({stW:'all',stP:'all',stB:'all'}).rows;
+ return list.map(st=>{const r=rows.find(x=>x.s.id===st.id)||{},c={};ST.forEach(x=>c[x.k]=r[x.k]||0);const weeks=[];
+  for(let n=Math.min(NW(),weekByDate());n>=1&&weeks.length<10;n--){if(isHol(n)){weeks.push({n,hol:1,f:fmt(dayDate(n,0)),t:fmt(dayDate(n,6))});continue}
+   const it=[];active(n).forEach(s=>{const k=recOf(n,s.key)[st.id];if(k)it.push([s.pname,s.day,k,s.tasmee&&ATT.has(k)?(tasOf(n,s.key)[st.id]||''):''])});
+   if(it.length)weeks.push({n,f:fmt(dayDate(n,0)),t:fmt(dayDate(n,6)),it})}
+  return {hid:HIDN(),sid:st.id,name:st.name,batch:batchName(st.b),title:hTitle(),logo:S.cfg.logo||'',term:TERM().name,pct:r.pct??null,c,ty:r.ty||0,tn:r.tn||0,pts:r.pts||0,bp:r.bp||0,weeks}})}finally{ui.term=keep}}
+function portalHTML(d,preview){const lg=d.logo||(d.hid==='wtd'?'logo.png':'');const tas=d.ty+d.tn;
+ let h=`<div class="portal">${preview?'<div class="note">معاينة: هذي الصفحة اللي يشوفها ولي الأمر لما يفتح رابطه الخاص.</div>':''}
+ <div class="phero">${lg?`<img src="${esc(lg)}" alt="">`:''}<div><div class="mut">${esc(d.title)} · ${esc(d.term||'')}</div><h1>${esc(d.name)}</h1><div class="mut">${esc(d.batch||'')}</div></div></div>
+ <div class="kpis"><div class="kpi"><b>${pctT(d.pct)}</b>نسبة الحضور</div><div class="kpi"><b>${num(d.pts||0)}</b>مجموع النقاط</div>${tas?`<div class="kpi"><b>${d.ty}/${tas}</b>مرات التسميع</div>`:''}</div>
+ <div class="sum">${ST.map(x=>`<span class="pill" style="--c:${x.hex};background:var(--card)"><span class="dot"></span>${x.l}: ${(d.c||{})[x.k]||0}</span>`).join('')}</div><h2>السجل أسبوعاً بأسبوع</h2>`;
+ if(!(d.weeks||[]).length)h+='<p class="mut">ما فيه تحضير مسجّل للحين.</p>';
+ (d.weeks||[]).forEach(w=>{h+=`<div class="wk"><b>الأسبوع ${w.n} <span class="mut">${esc(w.f||'')} – ${esc(w.t||'')}</span></b>`;
+  if(w.hol)h+='<span class="mut">إجازة</span>';else (w.it||[]).forEach(([p,dy,k,tv])=>{const x=STM[k]||{l:'—',hex:'#999'};h+=`<span class="sc"><span class="dot" style="--c:${x.hex}"></span>${esc(p)} ${DAYS[dy]||''}: ${x.l}${tv&&TASM[tv]?' · '+TASM[tv].l:''}</span>`});
+  h+='</div>'});
+ h+=`<p class="mut" style="margin-top:18px">${d.updated?'آخر تحديث: '+hfull(new Date(d.updated))+' · ':''}هذي الصفحة خاصة بولي أمر الطالب، تتحدّث تلقائياً مع كل تحضير.</p></div>`;return h}
+function pView(h){PORTALV=h;document.body.classList.add('pmode');render()}
+function portalLocal(){const st=S.students.find(x=>x.id===PTOK||x.portal===PTOK);pView(st?portalHTML(pDataAll([st])[0],true):'<div class="empty">الرابط غير صالح.</div>')}
+async function portalFB(){pView('<div class="empty">جاري التحميل…</div>');
+ try{await tmo(loadFirebase(),25000,'timeout');firebase.initializeApp(FB);const sn=await tmo(firebase.firestore().doc('portal/'+PTOK).get(),20000,'timeout');
+  if(!sn.exists)return pView('<div class="empty"><h2>الرابط غير صالح</h2><p class="mut">يمكن أن المشرف أوقف هذا الرابط. تواصل معه للحصول على رابط جديد.</p></div>');
+  const d=sn.data();applyBrand(d.title||'وتد',d.logo||(d.hid==='wtd'?'logo.png':''));pView(portalHTML(d))}catch(e){pView('<div class="empty"><h2>تعذّر التحميل</h2><p class="mut">تأكد من الإنترنت وحدّث الصفحة.</p></div>')}}
+function portalSoon(){if(!isFB()||readOnly||!ready||!S.students.some(x=>x.portal))return;clearTimeout(pT);pT=setTimeout(portalSync,4000)}
+async function portalSync(){if(!isFB()||readOnly)return;const list=S.students.filter(x=>x.portal),data=pDataAll(list),jobs=[];
+ list.forEach((st,i)=>{const h=JSON.stringify(data[i]);if(PH[st.portal]!==h)jobs.push([st.portal,data[i],h])});
+ const live=new Set(list.map(x=>x.portal));Object.keys(PH).forEach(t=>{if(!live.has(t))jobs.push([t,null])});
+ for(const [t,d,h] of jobs){try{if(d){await FBS.doc('portal/'+t).set(Object.assign({updated:Date.now()},d));PH[t]=h}else{await FBS.doc('portal/'+t).delete();delete PH[t]}}catch(e){}}
+ try{localStorage.setItem('watad-ph',JSON.stringify(PH))}catch(e){}}
+async function portalMake(st){if(st.portal)return st.portal;st.portal=ptok();saveSt();log('إنشاء رابط ولي الأمر للطالب '+st.name);clearTimeout(pT);await portalSync();return st.portal}
+async function portalStop(st){if(!st.portal)return;const t=st.portal;delete st.portal;saveSt();log('إيقاف رابط ولي الأمر للطالب '+st.name);try{await FBS.doc('portal/'+t).delete()}catch(e){}delete PH[t];try{localStorage.setItem('watad-ph',JSON.stringify(PH))}catch(e){}}
+function weekSum(st,n){const c={};let tot=0;active(n).forEach(s=>{const k=recOf(n,s.key)[st.id];if(k){c[k]=(c[k]||0)+1;tot++}});
+ if(!tot)return '';const at=(c.sh||0)+(c.p||0)+(c.l||0);let m='حضر '+at+' من '+tot;if(c.a)m+='، وغاب '+c.a;if(c.e)m+='، واعتذر '+c.e;if(c.l)m+='، وتأخر '+c.l;return m}
+function parentMsg(st,n){const d=pDataAll([st])[0],ws=weekSum(st,n),u=portalURL(st);
+ let m='السلام عليكم ورحمة الله وبركاته\nولي أمر الطالب '+st.name+' حفظه الله\n\n';
+ m+=ws?'ملخص الأسبوع '+n+': '+ws+'.\n':'الأسبوع '+n+' ما فيه تحضير مسجّل لابنكم.\n';if(d.pct!=null)m+='نسبة حضوره هذا الفصل: '+Math.round(d.pct*100)+'%\n';
+ m=ar(m);if(u)m+=ar('\nتقدرون تتابعون سجله كاملاً من هذا الرابط الخاص بكم:\n')+u+'\n';return m+ar('\nجزاكم الله خيراً\n')+hTitle()}
+function openParentMsgs(){const n=ui.week||Math.min(weekByDate(),NW()),list=AS(),o=document.createElement('div');o.className='ov';
+ const draw=()=>{const miss=isFB()?list.filter(x=>!x.portal).length:0;
+  let h=`<div class="dlg wide"><div class="phead"><div><h2 style="margin:0">تقرير أولياء الأمور</h2><div class="mut">الأسبوع ${n} · رسالة لكل ولي أمر فيها ملخص الأسبوع ورابط صفحة ابنه</div></div><button class="btn g" data-x="close">إغلاق</button></div>`;
+  if(miss&&!readOnly)h+=`<div class="note tip"><span>${miss} طالب بدون رابط ولي أمر.</span><button class="btn s" data-x="mkall">إنشاء الروابط للكل</button></div>`;
+  grouped(list).forEach(g=>{if(!g.items.length)return;h+=`<h3 class="sh">${esc(g.b.name)}</h3>`;g.items.forEach(st=>{const num=waNum(st.phone||''),txt=parentMsg(st,n);
+   h+=`<div class="al"><b style="min-width:9em">${esc(st.name)}</b><span class="mut">${esc(weekSum(st,n)||'بدون تحضير')}</span><span class="sp" style="flex:1"></span><button class="xb" data-copy="${esc(st.id)}">نسخ</button>${num?`<a class="xb" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit" href="https://wa.me/${num}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">واتساب</a>`:'<span class="mut">لا يوجد جوال</span>'}</div>`})});
+  o.innerHTML=h+'</div>'};draw();
+ o.addEventListener('click',async e=>{const t=e.target;if(t===o||t.dataset.x==='close'){o.remove();return}
+  if(t.dataset.x==='mkall'){t.disabled=true;t.textContent='جاري الإنشاء…';list.forEach(st=>{if(!st.portal)st.portal=ptok()});saveSt();log('إنشاء روابط أولياء الأمور للكل');await portalSync();toast('تم إنشاء الروابط');draw();return}
+  if(t.dataset.copy){const st=stu(t.dataset.copy);try{await navigator.clipboard.writeText(parentMsg(st,n));toast('نُسخت رسالة '+st.name)}catch(x){toast('تعذّر النسخ')}}});
+ document.body.appendChild(o)}
+function portalBox(st){const u=portalURL(st),num=waNum(st.phone||'');
+ if(!isFB())return `<h2>صفحة ولي الأمر</h2><p class="mut">في النسخة الكاملة يحصل كل ولي أمر على رابط خاص يشوف فيه حضور ابنه ونقاطه، ويتحدّث تلقائياً.</p><div class="acts"><a class="btn g" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(u)}" target="_blank" rel="noopener">معاينة صفحة ولي الأمر</a></div>`;
+ let h='<h2>صفحة ولي الأمر</h2><p class="mut">رابط خاص لولي الأمر يشوف فيه حضور ابنه ونقاطه بدون ملاحظاتكم، ويتحدّث تلقائياً.</p>';
+ if(!st.portal)return h+(readOnly?'<p class="mut">ما فيه رابط لهذا الطالب.</p>':'<div class="acts"><button class="btn" data-x="pmake">إنشاء رابط ولي الأمر</button></div>');
+ const msg=ar('السلام عليكم ورحمة الله وبركاته\nولي أمر الطالب '+st.name+' حفظه الله\n\nهذا رابط خاص فيكم تتابعون منه حضور ابنكم ونقاطه أولاً بأول:\n')+u+'\n\n'+hTitle();
+ return h+`<div class="plink lat" dir="ltr">${esc(u)}</div><div class="acts" style="margin-top:8px"><button class="btn g s" data-x="pcopy">نسخ الرابط</button>${num?`<a class="btn g s" style="display:inline-flex;align-items:center;text-decoration:none" href="https://wa.me/${num}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">إرسال لولي الأمر بالواتساب</a>`:''}<a class="btn g s" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(u)}" target="_blank" rel="noopener">فتح</a>${readOnly?'':'<button class="btn dg s" data-x="pstop">إيقاف الرابط</button>'}</div>`}
+
+/* ---------- halaqa branding & settings ---------- */
+function applyBrand(t,lg){const b=document.querySelector('.brand');if(!b)return;const title=t||hTitle(),logo=lg!==undefined?lg:(S.cfg.logo||(HIDN()==='wtd'?'logo.png':''));
+ const k=title+'|'+logo;if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=(logo?`<img src="${esc(logo)}" alt="">`:'')+'تحضير '+esc(title);document.title='تحضير '+title;logoImg=null}
+function vHalaqa(){if(!isFB())return '';const d=readOnly?' disabled':'',u=location.origin+location.pathname+'?h='+HIDN();
+ let h=`<h2>الحلقة</h2><div class="form" style="grid-template-columns:minmax(0,1fr)"><label class="af">اسم الحلقة: يظهر في الأعلى والتقارير ورسائل أولياء الأمور<input type="text" id="hTitle" value="${esc(S.cfg.title||'')}" placeholder="${esc(HIDN()==='wtd'?'وتد':'مثلاً: حلقة الفرقان')}"${d}></label></div>
+ <div class="acts" style="margin-top:8px;align-items:center">${S.cfg.logo?`<img src="${esc(S.cfg.logo)}" alt="الشعار" style="height:52px;border-radius:8px;background:#fff;padding:3px">`:''}${readOnly?'':`<label class="btn g s" style="display:inline-flex;align-items:center;cursor:pointer">${S.cfg.logo?'تغيير الشعار':'رفع شعار الحلقة'}<input type="file" id="hLogo" accept="image/*" hidden></label>${S.cfg.logo?'<button class="btn g s" data-hlogo="x">حذف الشعار</button>':''}`}</div>`;
+ if(HIDN()!=='wtd')h+=`<p style="margin:12px 0 4px">رابط حلقتك، أرسله للمشرفين عشان يدخلون ويرسلون طلب انضمام:</p><div class="plink lat" dir="ltr">${esc(u)}</div><div class="acts" style="margin-top:6px"><button class="btn g s" data-hcopy="1">نسخ الرابط</button></div>`;
+ return h+`<p class="mut" style="margin-top:10px">مشرف حلقة ثانية يبي يستخدم الموقع؟ يقدر <a href="${esc(location.pathname)}?new">ينشئ مساحة لحلقته</a> منفصلة تماماً.</p>`}
+function shrinkImg(file,max){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);let u=c.toDataURL('image/png');if(u.length>90000)u=c.toDataURL('image/jpeg',.85);res(u)};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+main.addEventListener('change',async e=>{const t=e.target;if(readOnly)return;
+ if(t.id==='hTitle'){const v=t.value.trim();if(v===(S.cfg.title||''))return;S.cfg.title=v;saveCfg();log('اسم الحلقة: '+(v||'—'));toast('تم');render();return}
+ if(t.id==='hLogo'&&t.files[0]){try{const u=await shrinkImg(t.files[0],180);S.cfg.logo=u;saveCfg();log('تغيير شعار الحلقة');toast('تم رفع الشعار');render()}catch(x){toast('تعذّر قراءة الصورة')}}});
+main.addEventListener('click',async e=>{const t=e.target.closest('[data-hlogo],[data-hcopy]');if(!t)return;
+ if(t.dataset.hcopy){try{await navigator.clipboard.writeText(location.origin+location.pathname+'?h='+HIDN());toast('نُسخ الرابط')}catch(x){toast('تعذّر النسخ')}return}
+ if(t.dataset.hlogo&&!readOnly){delete S.cfg.logo;saveCfg();log('حذف شعار الحلقة');render()}});
+
 function vSettings(){const d=readOnly?' disabled':'',t=TERM();
- let h='<h1>الإعدادات</h1>'+vAccount()+'<h2>النقاط العامة</h2><div class="ptsg">';
+ let h='<h1>الإعدادات</h1>'+vAccount()+vHalaqa()+'<h2>النقاط العامة</h2><div class="ptsg">';
  ST.forEach(x=>{h+=`<label><span><span class="dot" style="--c:${x.hex};display:inline-block"></span> ${x.l}</span><input type="text" value="${ar(+P()[x.k]||0)}" data-pt="${x.k}"${d}></label>`});
  TAS.forEach(x=>{h+=`<label><span><span class="dot" style="--c:${x.hex};display:inline-block"></span> ${x.l} (تُضاف)</span><input type="text" value="${ar(+P()['t'+x.k]||0)}" data-pt="t${x.k}"${d}></label>`});
  h+='</div><p class="mut">تغيير النقاط يُطبّق على كل التحضير المسجّل. البرنامج الذي له نقاط خاصة لا يتأثر بنقاط الحضور العامة. نقاط التسميع تُضاف فوق نقاط الحضور.</p><h2>البرامج</h2>';
@@ -504,10 +702,11 @@ function drawProfile(force){const st=stu(ui.prof);if(!st){closeProfile();return}
  const al=alerts().find(x=>x.st.id===st.id);const bl=S.bonus.filter(b=>b.sid===st.id&&(b.term||'t1')===TERM().id).sort((x,y)=>(y.date||'').localeCompare(x.date||''));const ro=readOnly?' disabled':'';
  let h=`<div class="dlg wide"><div class="phead"><div><h1>${esc(st.name)}</h1><div class="mut">${esc(batchName(st.b))} · ${esc(TERM().name)}${st.arch?' · مؤرشف':''}</div></div><div class="acts"><button class="btn g s" data-x="rep">تقرير الطالب</button><button class="btn g" data-x="close">إغلاق</button></div></div>`;
  if(al)h+=`<div class="note" style="border-color:var(--rd)">${al.r.map(esc).join(' · ')}</div>`;
+ {const oc=openCase(st.id);if(oc)h+=`<div class="note tip"><span>تحت المتابعة منذ ${hfull(new Date(oc.t))} · ${actsOf(oc).length} إجراء</span><button class="btn g s" data-x="gocase" data-c="${esc(oc.id)}">عرض الحالة</button></div>`;else if(!readOnly)h+=`<div class="acts" style="margin-top:8px"><button class="btn g s" data-x="newcase">فتح حالة متابعة</button></div>`}
  h+=`<div class="kpis"><div class="kpi"><b>${pctT(r.pct)}</b>نسبة الحضور</div><div class="kpi"><b>${num((r.ap||0)+(r.tp||0))}</b>نقاط الحضور والتسميع</div><div class="kpi"><b>${sgn(r.bp||0)}</b>نقاط إضافية</div><div class="kpi"><b>${num(r.pts||0)}</b>المجموع</div></div>
  <div class="sum">${ST.map(x=>`<span class="pill" style="--c:${x.hex};background:var(--card)"><span class="dot"></span>${x.l}: ${r[x.k]||0}</span>`).join('')}${TAS.map(x=>`<span class="pill" style="--c:${x.hex};background:var(--card)"><span class="dot"></span>${x.l}: ${r['t'+x.k]||0}</span>`).join('')}</div>
  <h2>ولي الأمر والملاحظات</h2><div class="form" style="grid-template-columns:minmax(0,1fr)"><input type="text" id="pPhone" inputmode="tel" placeholder="جوال ولي الأمر، مثلاً ٠٥٠٠٠٠٠٠٠٠" value="${esc(ar(st.phone||''))}" aria-label="جوال ولي الأمر"${ro}><textarea id="pNote" style="min-height:80px" placeholder="ملاحظات عامة: يحتاج متابعة في الحفظ، ظرف عائلي…" aria-label="ملاحظات عامة"${ro}>${esc(st.note||'')}</textarea></div>
- <div class="acts" style="margin-top:8px">${readOnly?'':'<button class="btn" data-x="saveinfo">حفظ</button>'}<button class="btn g" data-x="msg">رسالة لولي الأمر</button></div><div id="msgBox"></div>
+ <div class="acts" style="margin-top:8px">${readOnly?'':'<button class="btn" data-x="saveinfo">حفظ</button>'}<button class="btn g" data-x="msg">رسالة لولي الأمر</button></div><div id="msgBox"></div>${portalBox(st)}
  <h2>السجل أسبوعاً بأسبوع</h2>`;
  for(let n=NW();n>=1;n--){h+=`<div class="wk"><b>الأسبوع ${n} <span class="mut">${fmt(dayDate(n,0))} – ${fmt(dayDate(n,6))}</span></b>`;
   if(isHol(n)){h+='<span class="mut">إجازة</span></div>';continue}
@@ -526,11 +725,16 @@ function guardianMsg(st){const t=timeline(st.id),from=addD(today0(),-29),abs=t.f
  if(abs.length){m+='نفيدكم بغياب ابنكم عن:\n'+abs.map(x=>'- '+x.s.pname+' يوم '+DAYS[x.s.day]+' '+hfull(x.date)).join('\n')+'\n\n'}
  else m+='نطمئنكم بأنه لا يوجد غياب مسجّل على ابنكم خلال آخر ٣٠ يوماً.\n\n';
  if(t.length)m+='نسبة حضوره هذا الفصل: '+Math.round(att/t.length*100)+'%\n\n';
- return ar(m+(abs.length?'نأمل متابعته والحرص على حضوره، وجزاكم الله خيراً.':'جزاكم الله خيراً على حرصكم.')+'\nوتد')}
+ return ar(m+(abs.length?'نأمل متابعته والحرص على حضوره، وجزاكم الله خيراً.':'جزاكم الله خيراً على حرصكم.')+'\n')+hTitle()}
 async function profClick(e){const _b=snap();try{await profClick0(e)}finally{pushUndo(_b)}}
 async function profClick0(e){if(e.target===profEl){closeProfile();return}const t=e.target.closest('button');if(!t)return;const st=stu(ui.prof);
  if(t.dataset.x==='close'){closeProfile();return}
  if(t.dataset.x==='rep'){expStudent(st);return}
+ if(t.dataset.x==='pmake'&&!readOnly){t.disabled=true;await portalMake(st);drawProfile(true);try{await navigator.clipboard.writeText(portalURL(st));toast('تم إنشاء الرابط ونسخه')}catch(x){toast('تم إنشاء الرابط')}return}
+ if(t.dataset.x==='pcopy'){try{await navigator.clipboard.writeText(portalURL(st));toast('نُسخ الرابط')}catch(x){toast('تعذّر النسخ')}return}
+ if(t.dataset.x==='pstop'&&!readOnly){if(!await ask('إيقاف رابط ولي أمر '+st.name+'؟ الرابط القديم ما راح يفتح بعدها، وتقدر تسوي رابط جديد.','إيقاف'))return;await portalStop(st);drawProfile(true);toast('أُوقف الرابط');return}
+ if(t.dataset.x==='gocase'){closeProfile();goCase(t.dataset.c);return}
+ if(t.dataset.x==='newcase'&&!readOnly){const id=newCase(st.id);closeProfile();goCase(id);return}
  if(t.dataset.x==='saveinfo'&&!readOnly){const ph=toL(profEl.querySelector('#pPhone').value.trim()),nt=profEl.querySelector('#pNote').value.trim();
   if(ph!==(st.phone||'')||nt!==(st.note||'')){st.phone=ph;st.note=nt;saveSt();log('تحديث بيانات '+st.name)}document.activeElement.blur();toast('تم الحفظ');drawProfile(true);return}
  if(t.dataset.x==='msg'){const txt=guardianMsg(st),num=waNum(toL(profEl.querySelector('#pPhone').value));const box=profEl.querySelector('#msgBox');
@@ -592,7 +796,7 @@ ui.unlock=new Set();
 function isLocked(n){if(readOnly||S.cfg.lock===false)return false;const t=TERM();if(t.id===S.cfg.cur&&n>=weekByDate(t))return false;return !ui.unlock.has(t.id+':'+n)}
 
 /* ---------- absence messages for one session ---------- */
-function absMsg(st,n,s){return ar('السلام عليكم ورحمة الله وبركاته\nولي أمر الطالب '+st.name+' حفظه الله\nنفيدكم بغياب ابنكم عن '+s.pname+' يوم '+DAYS[s.day]+' '+hfull(dayDate(n,s.day))+'.\nنأمل متابعته والحرص على حضوره، وجزاكم الله خيراً.\nوتد')}
+function absMsg(st,n,s){return ar('السلام عليكم ورحمة الله وبركاته\nولي أمر الطالب '+st.name+' حفظه الله\nنفيدكم بغياب ابنكم عن '+s.pname+' يوم '+DAYS[s.day]+' '+hfull(dayDate(n,s.day))+'.\nنأمل متابعته والحرص على حضوره، وجزاكم الله خيراً.\n')+hTitle()}
 function openAbsMsgs(){const n=ui.week,s=sessions(n).find(x=>x.key===ui.sess);if(!s)return;const r=recOf(n,s.key);
  const list=AS().filter(st=>r[st.id]==='a');const o=document.createElement('div');o.className='ov';
  let h=`<div class="dlg wide"><div class="phead"><div><h2 style="margin:0">رسائل الغياب</h2><div class="mut">${esc(s.pname)} · ${DAYS[s.day]} ${esc(hlong(dayDate(n,s.day)))}</div></div><button class="btn g" data-x="close">إغلاق</button></div>`;
@@ -690,8 +894,8 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
  if(D.cal){const [nn,dw]=D.cal.split(':').map(Number);ui.week=nn;const s=sessions(nn).find(x=>x.day===dw);ui.sess=s?s.key:null;location.hash='take';return}
  if(D.tipoff){try{localStorage.setItem('watad-tip-'+D.tipoff,Date.now()+3*864e5)}catch(x){}render();return}
  if(D.act==='accadd'){const e=($('#accEm').value||'').trim().toLowerCase(),r=$('#accR').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){toast('اكتب إيميل صحيح');return}await accSave(A=>{accRm(A,e);A[r+'s'].push(e)},'أُضيف '+e);return}
- if(D.reqok){const e=D.reqok,q=REQS.find(x=>x.email===e)||{},sel=main.querySelector(`[data-reqrole="${CSS.escape(e)}"]`),r=sel?sel.value:'editor';await accSave(A=>{accRm(A,e);A[r+'s'].push(e);if(q.name)A.names[e]=q.name},'وافقت على '+(q.name||e));try{await FBS.doc('requests/'+e).delete()}catch(x){}return}
- if(D.reqno){const e=D.reqno;if(!await ask('رفض طلب '+e+'؟','رفض'))return;try{await FBS.doc('requests/'+e).delete();toast('رُفض الطلب')}catch(x){toast('تعذّر الرفض')}return}
+ if(D.reqok){const e=D.reqok,q=REQS.find(x=>x.email===e)||{},sel=main.querySelector(`[data-reqrole="${CSS.escape(e)}"]`),r=sel?sel.value:'editor';await accSave(A=>{accRm(A,e);A[r+'s'].push(e);if(q.name)A.names[e]=q.name},'وافقت على '+(q.name||e));try{await FBS.doc(HP('requests/'+e)).delete()}catch(x){}return}
+ if(D.reqno){const e=D.reqno;if(!await ask('رفض طلب '+e+'؟','رفض'))return;try{await FBS.doc(HP('requests/'+e)).delete();toast('رُفض الطلب')}catch(x){toast('تعذّر الرفض')}return}
  if(D.accdel){const e=D.accdel;if(!await ask(e===ME?'تبي تشيل نفسك؟ بتطلع من الموقع.':'إزالة '+e+' من المشرفين؟','إزالة'))return;await accSave(A=>accRm(A,e),'أُزيل '+e);return}
  if(D.act==='allowedit'){readOnly=false;ui.backup=false;render();return}
  if(D.week){ui.week=+D.week;ui.sess=null;render();return}
@@ -753,7 +957,7 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
   case 'expstats':expStats();break;
   case 'expterm':expTerm();break;
   case 'xlsx':expXlsx();break;
-  case 'backup':try{localStorage.setItem('watad-lastbk',Date.now())}catch(x){}save('نسخة-تحضير-وتد-'+ar(iso(new Date()))+'.json',JSON.stringify({cfg:S.cfg,students:S.students,all:S.all,bonus:S.bonus},null,1));render();break}
+  case 'backup':try{localStorage.setItem('watad-lastbk',Date.now())}catch(x){}save('نسخة-تحضير-وتد-'+ar(iso(new Date()))+'.json',JSON.stringify({cfg:S.cfg,students:S.students,all:S.all,bonus:S.bonus,cases:S.cases||{}},null,1));render();break}
 }
 main.addEventListener('submit',e=>{const _b=snap();onMainSubmit(e);pushUndo(_b)});
 function onMainSubmit(e){e.preventDefault();if(readOnly)return;
@@ -784,18 +988,18 @@ async function onMainChange(e){const t=e.target,D=t.dataset;
  if(t.id==='restore'&&t.files[0]){const rf=t.files[0];t.value='';try{const v=JSON.parse(await rf.text());if(!v.cfg||!Array.isArray(v.students))throw 0;
   if(!await ask('استبدال كل البيانات الحالية بالنسخة؟','استعادة'))return;
   let all=v.all||{};if(v.weeks&&!v.all)Object.keys(v.weeks).forEach(k=>all['w'+k]=v.weeks[k]);
-  S.cfg=norm(v.cfg);S.students=v.students.map(s=>({id:String(s.id),name:String(s.name),b:String(s.b),phone:s.phone?String(s.phone):'',note:s.note?String(s.note):'',arch:!!s.arch,grad:!!s.grad}));S.bonus=Array.isArray(v.bonus)?v.bonus:[];const gone=Object.keys(S.all).filter(id=>!all[id]);S.all=all;gone.forEach(delWeekDoc);
+  S.cfg=norm(v.cfg);S.students=v.students.map(s=>({id:String(s.id),name:String(s.name),b:String(s.b),phone:s.phone?String(s.phone):'',note:s.note?String(s.note):'',arch:!!s.arch,grad:!!s.grad}));S.bonus=Array.isArray(v.bonus)?v.bonus:[];if(v.cases&&typeof v.cases==='object'){S.cases=v.cases;saveCs()}const gone=Object.keys(S.all).filter(id=>!all[id]);S.all=all;gone.forEach(delWeekDoc);
   saveCfg();saveSt();saveBn();Object.keys(all).forEach(id=>persist('weeks/'+id,()=>S.all[id]));log('استعادة نسخة احتياطية');toast('تمت الاستعادة');render()}catch(x){toast('الملف غير صالح')}}}
 main.addEventListener('focusout',()=>setTimeout(()=>{if(deferRender&&!main.contains(document.activeElement))render()},0));
 main.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-ren],[data-bren],[data-pren],[data-tren],#q'))e.target.blur()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.prof&&document.querySelectorAll('.ov').length===1)closeProfile()});
-function route(){const ae=document.activeElement;if(ae&&main.contains(ae)&&ae.blur)ae.blur();deferRender=false;const h=location.hash.slice(1);ui.view=['take','stats','students','settings'].includes(h)?h:'take';render();window.scrollTo(0,0)}
+function route(){if(PORTALV&&!location.hash.startsWith('#p-')){location.hash='';location.reload();return}const ae=document.activeElement;if(ae&&main.contains(ae)&&ae.blur)ae.blur();deferRender=false;const h=location.hash.slice(1);ui.view=['take','stats','cases','students','settings'].includes(h)?h:'take';render();window.scrollTo(0,0);csFocusNow()}
 window.addEventListener('hashchange',route);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ready){const w=S.cfg.terms.find(x=>x.id===S.cfg.cur),b=w&&w.weeks;autoWeeks();if(w&&w.weeks!==b)render()}});
 
 /* ---------- export (image / PDF / Excel) ---------- */
 let logoImg=null;
-async function getLogo(){if(logoImg)return logoImg;const i=new Image();i.src='logo.png';try{await i.decode();logoImg=i}catch(e){}return logoImg}
+async function getLogo(){if(logoImg)return logoImg;const lu=S.cfg.logo||(HIDN()==='wtd'?'logo.png':'');if(!lu)return null;const i=new Image();i.src=lu;try{await i.decode();logoImg=i}catch(e){}return logoImg}
 function fit(ctx,s,w){s=ar(String(s));if(ctx.measureText(s).width<=w)return s;while(s.length>1&&ctx.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…'}
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 async function drawReport({title,sub,summary,cols,rows,grid}){
@@ -827,7 +1031,7 @@ async function drawReport({title,sub,summary,cols,rows,grid}){
    if(v&&typeof v==='object'){if(!v.t)return;c.font='700 18px '+F;const w=Math.min(col.w-16,c.measureText(v.t).width+28);c.fillStyle=v.hex;rr(c,cx-w/2,y+10,w,RH-20,(RH-20)/2);c.fill();c.fillStyle=v.dark?'#2a2927':'#fff';c.fillText(fit(c,v.t,w-12),cx,y+RH/2+1);return}
    c.font=(col.b?'700 ':'400 ')+'21px '+F;c.fillStyle=col.neg&&+String(v).replace(/[^\d+-]/g,'')<0?'#E04F3F':'#2a2927';const sv=/^[\u200E]?[-+]?\d/.test(String(v))&&String(v)[0]!=='\u200E'?'\u200E'+v:v;c.fillText(fit(c,sv,col.w-20),cx,y+RH/2+1)});
   y+=RH});
- c.textAlign='center';c.font='400 18px '+F;c.fillStyle='#8a8580';c.fillText('وتد · صدر في '+hlong(new Date()),W/2,H-42);
+ c.textAlign='center';c.font='400 18px '+F;c.fillStyle='#8a8580';c.fillText(hTitle()+' · صدر في '+hlong(new Date()),W/2,H-42);
  return cv}
 const pill=k=>{const x=STM[k];return x?{t:x.l,hex:x.hex,dark:k==='e'}:{t:'لم يُسجّل',hex:'#ece9e4',dark:true}};
 function expSession(){const n=ui.week,s=sessions(n).find(x=>x.key===ui.sess);if(!s)return;const r=recOf(n,s.key),tz=tasOf(n,s.key);
@@ -902,17 +1106,17 @@ const SEED_CFG={"alerts":{"exc":4,"pct":70,"streak":3},"batches":[{"id":"b6","na
 const SEED_ALL={"w1":{"rec":{"halaqa@0":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"e","s11":"a","s12":"a","s14":"p","s15":"a","s16":"sh","s17":"a","s18":"e","s19":"sh","s21":"p","s22":"p","s23":"p","s24":"e","s25":"a","s26":"p","s27":"p","s28":"p","s29":"p"},"halaqa@1":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"a","s10":"sh","s11":"a","s12":"sh","s14":"a","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"p","s23":"p","s24":"sh","s25":"sh","s26":"p","s27":"p","s28":"p","s29":"p"},"halaqa@2":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"p","s23":"p","s24":"sh","s25":"a","s26":"p","s27":"p","s28":"p","s29":"p"},"halaqa@3":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"p","s10":"sh","s11":"a","s12":"sh","s14":"p","s15":"sh","s16":"sh","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"p","s23":"p","s24":"sh","s25":"sh","s26":"sh","s27":"p","s28":"p","s29":"p"},"wkend@4":{"s1":"p","s2":"p","s3":"e","s4":"p","s5":"p","s6":"p","s7":"e","s8":"p","s9":"p","s10":"p","s11":"p","s12":"p","s14":"p","s15":"p","s16":"p","s17":"p","s18":"p","s19":"p","s21":"p","s22":"p","s23":"p","s24":"p","s25":"p","s26":"p","s27":"p","s29":"p"}},"sched":{"tue":[]},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w2":{"rec":{"halaqa@0":{"s1":"e","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"a","s12":"sh","s14":"e","s15":"sh","s16":"p","s17":"p","s18":"sh","s19":"sh","s21":"a","s22":"e","s23":"p","s24":"sh","s25":"p","s26":"p","s27":"p","s29":"e"},"halaqa@1":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"e","s19":"sh","s21":"a","s22":"sh","s23":"p","s24":"sh","s25":"p","s26":"p","s27":"p","s29":"p"},"halaqa@2":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"p","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"sh","s22":"p","s23":"p","s24":"sh","s25":"sh","s26":"p","s27":"p","s29":"p"},"tue@2":{"s1":"sh","s2":"sh","s3":"a","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"e","s9":"sh","s10":"sh","s11":"a","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"e","s26":"p","s27":"sh","s29":"p"},"halaqa@3":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"p","s8":"e","s9":"sh","s10":"sh","s11":"a","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"e","s26":"p","s27":"sh","s29":"p"},"wkend@4":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"e","s9":"sh","s10":"sh","s11":"e","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"sh","s19":"sh","s21":"p","s22":"p","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s29":"p"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w3":{"rec":{"halaqa@0":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"p","s6":"sh","s7":"p","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s13":"p","s14":"a","s15":"sh","s16":"p","s17":"p","s18":"e","s19":"sh","s21":"a","s22":"p","s23":"p","s24":"sh","s25":"sh","s26":"p","s27":"p","s29":"e"},"halaqa@1":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"p","s8":"p","s9":"e","s10":"sh","s11":"p","s12":"sh","s13":"p","s14":"p","s15":"sh","s16":"e","s17":"p","s18":"p","s19":"sh","s21":"a","s22":"p","s23":"p","s24":"sh","s25":"p","s26":"a","s27":"p","s29":"p"},"halaqa@2":{"s1":"sh","s2":"sh","s3":"e","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"sh","s9":"sh","s10":"sh","s11":"a","s12":"a","s13":"p","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"a","s19":"sh","s21":"a","s22":"sh","s23":"p","s24":"sh","s25":"sh","s26":"e","s27":"a","s28":"p","s29":"p"},"tue@2":{"s1":"sh","s2":"e","s3":"e","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"sh","s9":"sh","s10":"sh","s11":"a","s12":"a","s13":"p","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"e","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"sh","s26":"e","s27":"a","s28":"p","s29":"sh"},"wkend@4":{"s1":"sh","s2":"sh","s3":"e","s4":"sh","s5":"e","s6":"e","s7":"p","s8":"sh","s9":"sh","s10":"sh","s11":"e","s12":"sh","s14":"e","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"e","s24":"sh","s25":"a","s26":"e","s27":"p","s28":"p","s29":"e"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w4":{"rec":{"halaqa@1":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"p","s8":"sh","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"e","s18":"e","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"sh","s26":"p","s27":"p","s28":"p","s29":"p"},"halaqa@2":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"sh","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"a","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"p"},"tue@2":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"sh","s9":"sh","s10":"sh","s11":"a","s12":"sh","s14":"e","s15":"a","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"e","s22":"sh","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"sh"},"halaqa@3":{"s1":"sh","s2":"sh","s3":"a","s4":"sh","s5":"sh","s6":"sh","s7":"sh","s8":"sh","s9":"sh","s10":"sh","s11":"a","s12":"sh","s14":"e","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"sh","s22":"p","s23":"p","s24":"sh","s25":"p","s26":"p","s27":"p","s28":"p","s29":"p"},"wkend@4":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"e","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"e","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"p"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w5":{"rec":{"halaqa@1":{"s1":"sh","s2":"e","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"e","s15":"sh","s16":"p","s17":"p","s18":"a","s19":"sh","s21":"a","s22":"sh","s23":"p","s24":"sh","s25":"sh","s26":"p","s27":"p","s28":"p","s29":"e"},"halaqa@2":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"sh","s8":"e","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"sh","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"a","s24":"sh","s25":"sh","s26":"sh","s27":"sh","s28":"p","s29":"p"},"tue@2":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"sh","s8":"e","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"sh","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"a","s24":"sh","s25":"sh","s26":"sh","s27":"p","s28":"p","s29":"sh"},"halaqa@3":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"e","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"sh","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"e","s23":"p","s24":"sh","s25":"sh","s26":"sh","s27":"p","s28":"a","s29":"p"},"wkend@4":{"s1":"e","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"p","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"sh","s15":"sh","s16":"e","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"e","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"e"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w6":{"rec":{"tue@2":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"e","s8":"e","s9":"sh","s10":"sh","s11":"e","s12":"sh","s14":"p","s15":"sh","s16":"e","s17":"p","s18":"sh","s19":"sh","s21":"p","s22":"e","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"sh"},"wkend@4":{"s1":"sh","s2":"sh","s3":"e","s4":"sh","s5":"sh","s6":"e","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"e","s12":"e","s14":"p","s15":"sh","s16":"e","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"e","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"p"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w7":{"rec":{"tue@2":{"s1":"sh","s2":"sh","s3":"e","s4":"sh","s5":"sh","s6":"e","s7":"e","s8":"p","s9":"e","s10":"sh","s11":"e","s12":"sh","s14":"p","s15":"sh","s16":"e","s17":"p","s18":"p","s19":"sh","s21":"e","s22":"e","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"e"},"wkend@4":{"s1":"sh","s2":"p","s3":"sh","s4":"sh","s5":"sh","s6":"e","s7":"e","s8":"p","s9":"sh","s10":"sh","s11":"p","s12":"sh","s14":"p","s15":"sh","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"sh","s24":"sh","s25":"p","s26":"sh","s27":"e","s28":"p","s29":"p"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w8":{"rec":{"halaqa@0":{"s29":"p"},"halaqa@1":{"s29":"p"},"halaqa@2":{"s29":"p"},"tue@2":{"s1":"sh","s2":"sh","s3":"p","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"a","s12":"sh","s13":"p","s14":"sh","s15":"p","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"a","s26":"sh","s27":"e","s28":"sh","s29":"sh"},"halaqa@3":{"s29":"p"},"wkend@6":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"p","s7":"a","s8":"e","s9":"sh","s10":"sh","s11":"e","s12":"e","s13":"p","s14":"p","s15":"sh","s16":"e","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"sh","s26":"sh","s27":"p","s28":"sh","s29":"sh"}},"sched":{"wkend":[6]},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w9":{"rec":{"halaqa@2":{"s29":"sh"},"tue@2":{"s1":"sh","s2":"e","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"a","s12":"p","s13":"a","s14":"sh","s15":"sh","s16":"p","s17":"p","s18":"e","s19":"sh","s21":"p","s22":"sh","s23":"p","s24":"sh","s25":"sh","s26":"sh","s27":"sh","s28":"sh","s29":"sh"},"wkend@4":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"e","s7":"p","s8":"sh","s9":"sh","s10":"sh","s11":"e","s12":"sh","s13":"p","s14":"e","s15":"sh","s16":"p","s17":"e","s18":"e","s19":"sh","s21":"a","s22":"sh","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"sh","s28":"p","s29":"sh"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w10":{"rec":{"halaqa@0":{"s28":"e"},"halaqa@2":{"s29":"sh"},"tue@2":{"s1":"e","s2":"e","s3":"e","s4":"sh","s5":"e","s6":"e","s7":"a","s8":"e","s9":"sh","s10":"sh","s11":"a","s12":"a","s13":"a","s14":"e","s15":"p","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"e","s24":"sh","s25":"p","s26":"sh","s27":"p","s28":"p","s29":"sh"},"wkend@4":{"s1":"e","s2":"sh","s3":"e","s4":"sh","s5":"e","s6":"p","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"e","s12":"sh","s13":"e","s14":"e","s15":"sh","s16":"sh","s17":"p","s18":"p","s19":"sh","s21":"p","s22":"sh","s23":"e","s24":"sh","s25":"sh","s26":"sh","s27":"p","s28":"e","s29":"sh","s30":"p"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w11":{"rec":{"halaqa@2":{"s29":"sh"},"tue@2":{"s1":"sh","s2":"sh","s3":"sh","s4":"sh","s5":"sh","s6":"sh","s7":"a","s8":"p","s9":"sh","s10":"sh","s11":"e","s12":"sh","s13":"p","s14":"e","s15":"p","s16":"p","s17":"p","s18":"p","s19":"sh","s21":"e","s22":"e","s23":"p","s24":"sh","s25":"p","s26":"sh","s27":"e","s28":"e","s29":"sh","s30":"p"}},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1"},"w12":{"rec":{},"sched":{},"notes":{},"cancel":{},"tas":{},"term":"t1","holiday":true}};
 const SYNC={code:null,key:null,topic:null,conns:[],got:false,t:0,status:'off'};
 const SK='watad-sync-code',SG='watad-sync-got',SN='watad-me';
-function partOf(path){if(path==='app/config')return 'cfg';if(path==='app/students')return 'st';if(path==='app/bonus')return 'bn';if(path.startsWith('weeks/'))return 'w:'+path.slice(6);return 'log'}
+function partOf(path){if(path==='app/config')return 'cfg';if(path==='app/students')return 'st';if(path==='app/bonus')return 'bn';if(path==='app/cases')return 'cs';if(path.startsWith('weeks/'))return 'w:'+path.slice(6);return 'log'}
 const PREV={};
 function wparts(w){const o={m:JSON.stringify([w.sched||{},w.cancel||{},!!w.holiday]),r:{}};new Set([...Object.keys(w.rec||{}),...Object.keys(w.tas||{}),...Object.keys(w.notes||{})]).forEach(k=>o.r[k]=JSON.stringify([(w.rec||{})[k]||null,(w.tas||{})[k]||null,(w.notes||{})[k]||null]));return o}
 function stampWeek(id,now,all){S._ts=S._ts||{};const w=S.all[id];if(!w){S._ts['w:'+id]=now;delete PREV[id];return}
  const cur=wparts(w),pv=all?{m:null,r:{}}:(PREV[id]||{m:null,r:{}});if(cur.m!==pv.m)S._ts['m:'+id]=now;
  new Set([...Object.keys(cur.r),...Object.keys(pv.r)]).forEach(k=>{if(cur.r[k]!==pv.r[k])S._ts['r:'+id+'|'+k]=now});PREV[id]=cur}
 function stampPath(path){const p=partOf(path);if(p.startsWith('w:'))return stampWeek(p.slice(2),Date.now());S._ts=S._ts||{};S._ts[p]=Date.now()}
-function stampAll(){const t=Date.now();S._ts=S._ts||{};['cfg','st','bn','log'].forEach(k=>S._ts[k]=t);Object.keys(S.all||{}).forEach(id=>stampWeek(id,t,true))}
+function stampAll(){const t=Date.now();S._ts=S._ts||{};['cfg','st','bn','cs','log'].forEach(k=>S._ts[k]=t);Object.keys(S.all||{}).forEach(id=>stampWeek(id,t,true))}
 function initPrev(){Object.keys(S.all||{}).forEach(id=>PREV[id]=wparts(S.all[id]))}
 function ensureW(id,rw){const w=S.all[id]||(S.all[id]={});['rec','sched','notes','cancel','tas'].forEach(f=>w[f]=w[f]||{});if(rw&&rw.term)w.term=rw.term;return w}
-function setPart(k,R){if(k==='cfg')S.cfg=norm(R.cfg);else if(k==='st')S.students=R.st||[];else if(k==='bn')S.bonus=R.bn||[];
+function setPart(k,R){if(k==='cfg')S.cfg=norm(R.cfg);else if(k==='st')S.students=R.st||[];else if(k==='bn')S.bonus=R.bn||[];else if(k==='cs')S.cases=R.cs||{};
  else if(k.startsWith('w:')){const id=k.slice(2),v=(R.all||{})[id];if(v)S.all[id]=v;else delete S.all[id]}
  else if(k.startsWith('m:')){const id=k.slice(2),rw=(R.all||{})[id];if(!rw)return;const w=ensureW(id,rw);w.sched=clone(rw.sched||{});w.cancel=clone(rw.cancel||{});if(rw.holiday)w.holiday=true;else delete w.holiday}
  else if(k.startsWith('r:')){const i=k.indexOf('|'),id=k.slice(2,i),key=k.slice(i+1),rw=(R.all||{})[id];const w=ensureW(id,rw);
@@ -958,7 +1162,7 @@ const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mq
 function syncStatus(){const n=SYNC.conns.filter(c=>c.alive).length;SYNC.status=!SYNC.code?'off':n?'on':'wait';const el=$('#sst');if(el){el.hidden=!SYNC.code;el.textContent=n?'● متزامن':'○ يتصل…';el.className=n?'on':''}}
 let syncT=0;
 function syncSoon(){if(!SYNC.code||!SYNC.key)return;clearTimeout(syncT);syncT=setTimeout(async()=>{
- const o={v:1,ts:S._ts||{},cfg:S.cfg,st:S.students,bn:S.bonus,all:S.all,log:(S.log||[]).slice(-1500)};
+ const o={v:1,ts:S._ts||{},cfg:S.cfg,st:S.students,bn:S.bonus,cs:S.cases||{},all:S.all,log:(S.log||[]).slice(-1500)};
  try{SYNC.last=await seal(o);if(SYNC.got)SYNC.conns.forEach(c=>c.pub(SYNC.last))}catch(e){}},1500)}
 async function startSync(code,creator){stopSync();if(!window.crypto||!crypto.subtle){toast('المتصفح لا يدعم المزامنة المشفّرة');return}
  SYNC.code=code;try{localStorage.setItem(SK,code)}catch(e){}SYNC.got=creator||localStorage.getItem(SG)==='1';if(creator){try{localStorage.setItem(SG,'1')}catch(e){}stampAll();lsSave()}
@@ -986,7 +1190,7 @@ async function saSettingsClick(D){
 function saInit(){ME=(()=>{try{return localStorage.getItem(SN)||''}catch(e){return ''}})();
  let had=false;try{had=!!localStorage.getItem(LS)}catch(e){}
  if(had)lsLoad();else{S.cfg=norm(clone(SEED_CFG));S.students=SEED.slice();S.all=clone(SEED_ALL);S._ts={};lsSave();try{localStorage.setItem('watad-seedv','4')}catch(e){}}
- S.cfg=norm(S.cfg);S.bonus=S.bonus||[];S.all=S.all||{};S.log=S.log||[];initPrev();
+ S.cfg=norm(S.cfg);S.bonus=S.bonus||[];S.cases=S.cases||{};S.all=S.all||{};S.log=S.log||[];initPrev();
  let sv=0;try{sv=+localStorage.getItem('watad-seedv')||0}catch(e){}
  if(had&&sv<3){const now=Date.now();S.cfg=norm(clone(SEED_CFG));S.students=SEED.slice();S.all=clone(SEED_ALL);S.bonus=[];S.log=[];
   S._ts=S._ts||{};Object.keys(S._ts).forEach(k=>S._ts[k]=now);initPrev();stampAll();lsSave();try{localStorage.setItem('watad-seedv','4')}catch(e){}}
@@ -1004,6 +1208,10 @@ function saInit(){ME=(()=>{try{return localStorage.getItem(SN)||''}catch(e){retu
 
 /* ---------- accounts and cloud storage (Firebase) ---------- */
 const FB={"apiKey":"AIzaSyDzZSLrVR0t7PKnFdQgZV4wilall_jy1A0","authDomain":"wtd-halaqa.firebaseapp.com","projectId":"wtd-halaqa","storageBucket":"wtd-halaqa.firebasestorage.app","messagingSenderId":"947638973998","appId":"1:947638973998:web:b6f1892738e96e037e11bf"};
+const HIDV=(()=>{const ok=x=>!!x&&/^[a-z0-9][a-z0-9-]{2,29}$/.test(x),q=new URLSearchParams(location.search).get('h');
+ if(ok(q)){try{localStorage.setItem('watad-hid',q)}catch(e){}return q}try{const v=localStorage.getItem('watad-hid');if(ok(v))return v}catch(e){}return 'wtd'})();
+const NEWH=new URLSearchParams(location.search).has('new');
+const HP=p=>HIDV==='wtd'?p:'halaqat/'+HIDV+'/'+p;
 let REQS=[];let FBA=null,FBS=null,ACC=null,ROLE=null,AUTHV=null,authUser,fbStarted=false,CFGX=true;
 const isFB=()=>!!FB&&fbStarted;let FBDBG='';
 const tmo=(p,ms,code)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>{const e=new Error(code);e.code=code;j(e)},ms))]);
@@ -1012,12 +1220,12 @@ const aErr=e=>AUTHERR[e&&e.code]||'صار خطأ، حاول مرة ثانية';
 function loadFirebase(){const b='https://www.gstatic.com/firebasejs/10.14.1/';return ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'].reduce((p,f)=>p.then(()=>loadLib(b+f,()=>false)),Promise.resolve())}
 function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let b='';
  if(kind==='loading')b=`<p class="mut">${esc(extra||'جاري التحميل…')}</p>`;
- else if(kind==='login')b=`<h1>تسجيل الدخول</h1><p class="mut">كل مشرف يدخل بإيميله.</p>
+ else if(kind==='login')b=`<h1>${NEWH?'حلقة جديدة':'تسجيل الدخول'}</h1><p class="mut">${NEWH?'سجّل دخول أو سوّ حساب جديد، وبعدها تنشئ مساحة حلقتك.':'كل مشرف يدخل بإيميله.'}</p>
   <label class="af">الإيميل<input type="email" id="aEm" autocomplete="username" inputmode="email" dir="ltr"></label>
   <label class="af">كلمة المرور<input type="password" id="aPw" autocomplete="current-password" dir="ltr"></label>
   <div class="aerr" id="aErr" role="alert"></div>
   <div class="acts"><button class="btn" data-au="in">دخول</button><button class="btn g" data-au="up">حساب جديد</button></div>
-  <p style="margin:14px 0 0"><button class="lnk" data-au="reset">نسيت كلمة المرور؟</button></p>`;
+  <p style="margin:14px 0 0"><button class="lnk" data-au="reset">نسيت كلمة المرور؟</button></p>${NEWH?'':`<p class="mut" style="margin:18px 0 0">مشرف حلقة ثانية؟ <a href="${esc(location.pathname)}?new">أنشئ مساحة لحلقتك</a></p>`}`;
  else if(kind==='verify')b=`<h1>فعّل إيميلك</h1><p>أرسلنا رابط تفعيل إلى <b dir="ltr">${em}</b>. افتح الإيميل واضغط الرابط، وإذا ما لقيته شوف مجلد البريد غير المرغوب.</p>
   <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="checked">فعّلته</button><button class="btn g" data-au="resend">أرسل الرابط مرة ثانية</button><button class="btn g" data-au="out">خروج</button></div>`;
  else if(kind==='first')b=`<h1>أهلاً بك</h1><p>أنت أول من يدخل الموقع، فبتصير <b>المشرف الرئيسي</b>: تضيف المشرفين وتحدد صلاحياتهم من الإعدادات.</p><p class="mut" dir="ltr">${em}</p><label class="af">اسمك<input type="text" id="aNm" autocomplete="name" placeholder="مثلاً: أبو خالد"></label>
@@ -1025,6 +1233,13 @@ function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let
  else if(kind==='denied')b=`<h1>طلب انضمام</h1><p>حسابك <b dir="ltr">${em}</b> جاهز. اكتب اسمك وأرسل طلب انضمام، ويوافق عليه المشرف الرئيسي.</p>
   <label class="af">اسمك<input type="text" id="aNm" autocomplete="name" placeholder="مثلاً: أبو خالد"></label>
   <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="req">أرسل الطلب</button><button class="btn g" data-au="out">خروج</button></div>`;
+ else if(kind==='newh')b=`<h1>حلقة جديدة</h1><p>سوّ مساحة خاصة لحلقتك، طلابها وتحضيرها منفصلين تماماً، وتكون أنت مشرفها الرئيسي.</p>
+  <label class="af">اسم الحلقة<input type="text" id="nT" placeholder="مثلاً: حلقة الفرقان" autocomplete="off"></label>
+  <label class="af">رابط الحلقة: حروف إنجليزية صغيرة وأرقام<input type="text" id="nS" dir="ltr" placeholder="alfurqan" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+  <p class="mut lat" dir="ltr" id="nU" style="margin:0 0 10px;word-break:break-all">${esc(location.origin+location.pathname)}?h=…</p>
+  <label class="af">اسمك<input type="text" id="aNm" autocomplete="name" placeholder="مثلاً: أبو خالد"></label>
+  <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="mkh">إنشاء الحلقة</button>${HIDV!=='wtd'||true?`<a class="btn g" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(location.pathname)}">رجوع</a>`:''}<button class="btn g" data-au="out">خروج</button></div>`;
+ else if(kind==='nohalaqa')b=`<h1>الحلقة غير موجودة</h1><p>ما فيه حلقة بهذا الرابط. تأكد من الرابط من مشرف حلقتك، أو أنشئ حلقة جديدة.</p><div class="acts"><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(location.pathname)}?new">أنشئ حلقة جديدة</a><button class="btn g" data-au="out">خروج</button></div>`;
  else if(kind==='waiting')b=`<h1>طلبك وصل</h1><p>أرسلنا طلبك للمشرف الرئيسي. أول ما يوافق تدخل الموقع تلقائياً، وتقدر تسكّر الصفحة وترجع لها بعدين.</p><p class="mut" dir="ltr">${em}</p>
   <div class="acts"><button class="btn g" data-au="recheck">تحقق الحين</button><button class="btn g" data-au="out">خروج</button></div>`;
  else b=`<h1>تعذّر الاتصال</h1><p>${esc(extra||'تأكد من الإنترنت وحدّث الصفحة.')}</p>${FBDBG?`<p class="mut" dir="ltr" style="font-size:12px">${esc(FBDBG)}</p>`:''}<div class="acts"><button class="btn" data-au="reload">تحديث</button></div>`;
@@ -1038,10 +1253,18 @@ async function authAct(a){const em=($('#aEm')||{}).value,pw=($('#aPw')||{}).valu
   else if(a==='reset'){if(!em)return aMsg('اكتب إيميلك فوق، ثم اضغط «نسيت كلمة المرور» مرة ثانية');await FBA.sendPasswordResetEmail(em.trim());aMsg('أرسلنا رابط تغيير كلمة المرور لإيميلك',1)}
   else if(a==='resend'){await authUser.sendEmailVerification();aMsg('أرسلنا الرابط مرة ثانية',1)}
   else if(a==='checked'){await authUser.reload();authUser=FBA.currentUser;if(!authUser.emailVerified)return aMsg('للحين ما تفعّل، افتح الرابط اللي في الإيميل');fbRoute()}
-  else if(a==='claim'){const e=authUser.email.toLowerCase(),nm=(($('#aNm')||{}).value||'').trim();aMsg('جاري التجهيز…',1);try{await tmo(FBS.doc('meta/access').set({admins:[e],editors:[],viewers:[],names:nm?{[e]:nm}:{}}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت: تأكد إن قواعد الحماية انلصقت في Rules واضغطت Publish.':x&&x.code==='timeout'?'ما قدرت أوصل لقاعدة البيانات، تأكد إنك أنشأتها.':'صار خطأ: '+((x&&x.code)||''))}fbRoute()}
+  else if(a==='claim'){const e=authUser.email.toLowerCase(),nm=(($('#aNm')||{}).value||'').trim();aMsg('جاري التجهيز…',1);try{await tmo(FBS.doc(HP('meta/access')).set({admins:[e],editors:[],viewers:[],names:nm?{[e]:nm}:{}}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت: تأكد إن قواعد الحماية انلصقت في Rules واضغطت Publish.':x&&x.code==='timeout'?'ما قدرت أوصل لقاعدة البيانات، تأكد إنك أنشأتها.':'صار خطأ: '+((x&&x.code)||''))}fbRoute()}
   else if(a==='req'){const nm=(($('#aNm')||{}).value||'').trim();if(!nm)return aMsg('اكتب اسمك');aMsg('جاري الإرسال…',1);const e=authUser.email.toLowerCase();
-   try{await tmo(FBS.doc('requests/'+e).set({email:e,name:nm,t:Date.now()}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت الطلب: قواعد الحماية تحتاج تحديث.':'تعذّر الإرسال، حاول مرة ثانية')}authView('waiting')}
+   try{await tmo(FBS.doc(HP('requests/'+e)).set({email:e,name:nm,t:Date.now()}),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت الطلب: قواعد الحماية تحتاج تحديث.':'تعذّر الإرسال، حاول مرة ثانية')}authView('waiting')}
   else if(a==='recheck'){authView('loading');fbRoute()}
+  else if(a==='mkh'){const t=(($('#nT')||{}).value||'').trim(),sl=(($('#nS')||{}).value||'').trim().toLowerCase(),nm=(($('#aNm')||{}).value||'').trim(),e=authUser.email.toLowerCase();
+   if(!t)return aMsg('اكتب اسم الحلقة');if(!/^[a-z0-9][a-z0-9-]{2,29}$/.test(sl))return aMsg('الرابط لازم ٣ حروف أو أكثر: حروف إنجليزية صغيرة وأرقام وشرطة (-) فقط');if(['wtd','demo','new','admin','www'].includes(sl))return aMsg('هذا الرابط محجوز، اختر غيره');
+   if(!nm)return aMsg('اكتب اسمك');aMsg('جاري الإنشاء…',1);const base='halaqat/'+sl+'/';
+   try{const x=await tmo(FBS.doc(base+'meta/access').get(),15000,'timeout');if(x.exists)return aMsg('هذا الرابط مستخدم لحلقة ثانية، اختر غيره')}catch(x){if(x&&x.code==='permission-denied')return aMsg('هذا الرابط مستخدم لحلقة ثانية، اختر غيره');if(x&&x.code==='timeout')return aMsg('تعذّر الاتصال، حاول مرة ثانية')}
+   try{await tmo(FBS.doc(base+'meta/access').set({admins:[e],editors:[],viewers:[],names:{[e]:nm},title:t,t:Date.now()}),20000,'timeout');
+    const c=norm({title:t,batches:[{id:'b1',name:'المجموعة الأولى'}],terms:[{id:'t1',name:'الفصل الحالي',start:iso(sunday(new Date())),weeks:1}],cur:'t1'});
+    await tmo(FBS.doc(base+'app/config').set(clone(c)),20000,'timeout')}catch(x){return aMsg(x&&x.code==='permission-denied'?'قاعدة البيانات رفضت: قواعد الحماية تحتاج تحديث للحلقات الجديدة.':'تعذّر الإنشاء، حاول مرة ثانية')}
+   try{localStorage.setItem('watad-hid',sl)}catch(x){}location.href=location.pathname+'?h='+sl}
   else if(a==='out'){await FBA.signOut()}
   else if(a==='reload'){location.reload()}
  }catch(e){aMsg(aErr(e))}}
@@ -1049,14 +1272,14 @@ async function fbRoute(){const u=authUser;
  if(fbStarted){if(!u)location.reload();return}
  if(!u)return authView('login');
  if(!u.emailVerified)return authView('verify');
- authView('loading','جاري التحقق من صلاحيتك…');try{await tmo(u.getIdToken(true),15000,'timeout')}catch(e){}let a;try{a=await tmo(FBS.doc('meta/access').get(),20000,'timeout')}catch(e){FBDBG=(e&&(e.code||e.message))||'';if(e&&e.code==='timeout')return authView('error','ما قدرت أوصل لقاعدة البيانات. تأكد إنك أنشأت Firestore Database من رابط الخطوة الخامسة، وإن الإنترنت شغال، وبعدها حدّث الصفحة.');return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
- const em=u.email.toLowerCase();if(!a.exists)return authView('first');
+ authView('loading','جاري التحقق من صلاحيتك…');try{await tmo(u.getIdToken(true),15000,'timeout')}catch(e){}let a;try{a=await tmo(FBS.doc(HP('meta/access')).get(),20000,'timeout')}catch(e){if(e&&e.code==='permission-denied'){try{await tmo(FBS.doc(HP('requests/'+u.email.toLowerCase())).get(),15000,'timeout');a={exists:true,data:()=>({admins:[],editors:[],viewers:[]})}}catch(x){}}if(!a){FBDBG=(e&&(e.code||e.message))||'';if(e&&e.code==='timeout')return authView('error','ما قدرت أوصل لقاعدة البيانات. تأكد إنك أنشأت Firestore Database من رابط الخطوة الخامسة، وإن الإنترنت شغال، وبعدها حدّث الصفحة.');return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}}
+ const em=u.email.toLowerCase();if(NEWH)return authView('newh');if(!a.exists)return authView(HIDV==='wtd'?'first':'nohalaqa');
  ACC=a.data();ROLE=(ACC.admins||[]).includes(em)?'admin':(ACC.editors||[]).includes(em)?'editor':(ACC.viewers||[]).includes(em)?'viewer':null;
- if(!ROLE){const e=em;if(!fbRoute.w){fbRoute.w=FBS.doc('meta/access').onSnapshot(x=>{const d=x.exists?x.data():{};if([...(d.admins||[]),...(d.editors||[]),...(d.viewers||[])].includes(e))location.reload()},()=>{})}
-  let r=null;try{r=await tmo(FBS.doc('requests/'+e).get(),15000,'timeout')}catch(x){}return authView(r&&r.exists?'waiting':'denied')}
+ if(!ROLE){const e=em;if(!fbRoute.w){fbRoute.w=FBS.doc(HP('meta/access')).onSnapshot(x=>{const d=x.exists?x.data():{};if([...(d.admins||[]),...(d.editors||[]),...(d.viewers||[])].includes(e))location.reload()},()=>{});let had=false;FBS.doc(HP('requests/'+e)).onSnapshot(x=>{if(x.exists)had=true;else if(had)location.reload()},()=>{})}
+  let r=null;try{r=await tmo(FBS.doc(HP('requests/'+e)).get(),15000,'timeout')}catch(x){}return authView(r&&r.exists?'waiting':'denied')}
  fbStarted=true;AUTHV=null;document.body.classList.remove('authm');ME=em;if(ROLE==='viewer')readOnly=true;
- FBS.doc('meta/access').onSnapshot(s=>{if(s.exists){ACC=s.data();if(ui.view==='settings'&&ready)render()}},()=>{});
- if(ROLE==='admin')FBS.collection('requests').onSnapshot(q=>{REQS=q.docs.map(d=>d.data()).filter(x=>x&&x.email).sort((a,b)=>(a.t||0)-(b.t||0));if(ready)render()},()=>{});
+ FBS.doc(HP('meta/access')).onSnapshot(s=>{if(s.exists){ACC=s.data();if(ui.view==='settings'&&ready)render()}},()=>{});
+ if(ROLE==='admin')FBS.collection(HP('requests')).onSnapshot(q=>{REQS=q.docs.map(d=>d.data()).filter(x=>x&&x.email).sort((a,b)=>(a.t||0)-(b.t||0));if(ready)render()},()=>{});
  db=wrapFS(FBS);subscribe()}
 async function fbStart(){authView('loading','جاري تحميل نظام الحسابات…');
  try{await tmo(loadFirebase(),25000,'timeout')}catch(e){FBDBG='load: '+((e&&e.code)||'');return authView('error','تعذّر تحميل نظام الحسابات. تأكد من الإنترنت وحدّث الصفحة.')}
@@ -1065,6 +1288,7 @@ async function fbStart(){authView('loading','جاري تحميل نظام الح
  FBA.onAuthStateChanged(u=>{clearTimeout(aw);authUser=u;fbRoute()})}
 main.addEventListener('click',e=>{const t=e.target.closest('[data-au]');if(t){e.preventDefault();e.stopImmediatePropagation();authAct(t.dataset.au)}},true);
 main.addEventListener('keydown',e=>{if(e.key==='Enter'&&AUTHV&&(e.target.id==='aPw'||e.target.id==='aEm')){e.preventDefault();authAct('in')}});
+main.addEventListener('input',e=>{if(e.target.id==='nS'){const v=e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'');if(v!==e.target.value)e.target.value=v;const u=$('#nU');if(u)u.textContent=location.origin+location.pathname+'?h='+(v||'…')}});
 
 /* Firestore with the same shape the page already uses; week documents save field by field */
 const BASE={};
@@ -1074,15 +1298,16 @@ function fdiff(a,b){const ops=[];new Set(Object.keys(a||{}).concat(Object.keys(b
 function rebase(base,local,server){const out=flat(server);fdiff(base,flat(local)).forEach(([p,v])=>{const k=JSON.stringify(p);
   Object.keys(out).forEach(o=>{const q=JSON.parse(o);if(q.length>p.length&&p.every((x,i)=>q[i]===x))delete out[o]});
   for(let i=1;i<p.length;i++)delete out[JSON.stringify(p.slice(0,i))];if(v===undefined)delete out[k];else out[k]=v});return unflat(out)}
+const bk=p=>p.startsWith('weeks/')?p.slice(6):p==='app/cases'?'@cases':null;
 function wrapFS(fs){const FP=firebase.firestore.FieldPath,DEL=firebase.firestore.FieldValue.delete();
  const W=(r,path)=>({get:()=>r.get(),update:d=>r.update(d),onSnapshot:(n,e)=>r.onSnapshot({includeMetadataChanges:true},n,e),
-  delete:()=>{if(path.startsWith('weeks/'))delete BASE[path.slice(6)];return r.delete()},
-  set:async d=>{if(!path.startsWith('weeks/')||!BASE[path.slice(6)])return r.set(d).then(()=>{if(path.startsWith('weeks/'))BASE[path.slice(6)]=flat(d)});
-   const id=path.slice(6),ops=fdiff(BASE[id],flat(d));if(!ops.length)return;const args=[];
+  delete:()=>{const k=bk(path);if(k)delete BASE[k];return r.delete()},
+  set:async d=>{const id=bk(path);if(!id||!BASE[id])return (id&&id[0]==='@'?r.set(d,{merge:true}):r.set(d)).then(()=>{if(id&&id[0]!=='@')BASE[id]=flat(d)});
+   const ops=fdiff(BASE[id],flat(d));if(!ops.length)return;const args=[];
    ops.forEach(([p,v])=>{args.push(new FP(...p),v===undefined?DEL:v)});
    try{await r.update(...args)}catch(e){if(e&&e.code==='not-found')await r.set(d);else throw e}BASE[id]=flat(d)}});
  const Q=(q)=>({orderBy:(f,d)=>Q(q.orderBy(f,d)),limit:n=>Q(q.limit(n)),get:()=>q.get(),onSnapshot:(n,e)=>q.onSnapshot({includeMetadataChanges:true},n,e)});
- return {doc:p=>W(fs.doc(p),p),collection:p=>Q(fs.collection(p))}}
+ return {doc:p=>W(fs.doc(HP(p)),p),collection:p=>Q(fs.collection(HP(p)))}}
 
 function vAccount(){if(!isFB())return '';const R={admin:'مشرف رئيسي',editor:'مشرف',viewer:'اطلاع فقط'};
  const myN=((ACC||{}).names||{})[ME];let h=`<h2>الحساب</h2><div class="srow trow"><span>أنت داخل${myN?' باسم <b>'+esc(myN)+'</b>':''} بـ <b dir="ltr">${esc(ME)}</b> · ${R[ROLE]||''}</span><button class="btn g s" data-au="out">تسجيل خروج</button><span></span></div>`;
@@ -1095,9 +1320,9 @@ function vAccount(){if(!isFB())return '';const R={admin:'مشرف رئيسي',ed
  return h}
 async function accSave(mut,msg){const A={admins:[...(ACC.admins||[])],editors:[...(ACC.editors||[])],viewers:[...(ACC.viewers||[])],names:Object.assign({},ACC.names||{})};mut(A);
  if(!A.admins.length){toast('لازم يبقى مشرف رئيسي واحد على الأقل');return}
- try{await FBS.doc('meta/access').set(A);ACC=A;toast(msg);log(msg);render()}catch(e){toast('تعذّر الحفظ: '+(e&&e.code==='permission-denied'?'ما عندك صلاحية':'حاول مرة ثانية'))}}
+ try{await FBS.doc(HP('meta/access')).set(A);ACC=A;toast(msg);log(msg);render()}catch(e){toast('تعذّر الحفظ: '+(e&&e.code==='permission-denied'?'ما عندك صلاحية':'حاول مرة ثانية'))}}
 const accRm=(A,e)=>{['admins','editors','viewers'].forEach(k=>A[k]=A[k].filter(x=>x!==e))};
-async function fbInit(){const raw=(()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})();
+async function fbInit(){if(HIDV!=='wtd'){S.cfg=norm({title:(ACC&&ACC.title)||'',terms:[{id:'t1',name:'الفصل الحالي',start:iso(sunday(new Date())),weeks:1}],cur:'t1'});CFGX=true;saveCfg();saveSt();render();return}const raw=(()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})();
  const cnt=v=>{let n=0;Object.values((v&&v.all)||{}).forEach(w=>Object.values(w.rec||{}).forEach(r=>n+=Object.keys(r).length));return n};
  const o=document.createElement('div');o.className='ov';o.style.zIndex=25;
  o.innerHTML=`<div class="dlg"><h2 style="margin:0 0 8px">قاعدة البيانات فاضية</h2><p>هذي أول مرة. وش ترفع لها؟</p><div class="acts" style="flex-direction:column;align-items:stretch">${raw&&raw.cfg?`<button class="btn" data-x="dev">التحضير اللي في هذا الجهاز (${cnt(raw)} حالة)</button>`:''}<button class="btn g" data-x="seed">تحضير الشيت الأصلي (${cnt({all:SEED_ALL})} حالة)</button></div></div>`;
@@ -1113,8 +1338,8 @@ route();
 (async()=>{const C=window.claude;const safe=p=>p.catch(()=>null);
  [dl,db,U]=C?await Promise.all([safe(C.use('downloads')),safe(C.use('db')),safe(C.use('user'))]):[null,null,null];
  if(C)setupDesktop(C);
- if(!db&&FB){fbStart();return}
- if(!db){local=true;saInit();ready=true;autoWeeks();render();return}
+ if(!db&&FB){if(PTOK){portalFB();return}fbStart();return}
+ if(!db){local=true;saInit();ready=true;autoWeeks();if(PTOK){portalLocal();return}render();return}
  try{if(U){ME=await U.id();const w=await U.can('data.write');if(w===false)readOnly=true}}catch(e){}
  subscribe()})();
 function subscribe(){const timer=setTimeout(()=>{if(!ready){stale=true;render()}},10000);
@@ -1123,6 +1348,9 @@ function subscribe(){const timer=setTimeout(()=>{if(!ready){stale=true;render()}
  db.doc('app/config').onSnapshot(s=>{if(!s.metadata.fromCache)CFGX=s.exists;if(!pending('app/config'))S.cfg=norm(s.exists?s.data():null);if(!s.metadata.fromCache){loaded.cfg=true;afterLoad()}rer()},err);
  db.doc('app/students').onSnapshot(s=>{if(!pending('app/students')&&s.exists)S.students=clone(s.data().list||[]);if(!s.metadata.fromCache){loaded.st=true;afterLoad()}rer()},err);
  db.doc('app/bonus').onSnapshot(s=>{if(!pending('app/bonus')&&s.exists)S.bonus=clone(s.data().list||[]);if(!s.metadata.fromCache){loaded.bn=true;afterLoad()}rer()},err);
+ db.doc('app/cases').onSnapshot(s=>{const sv=s.exists?clone(s.data().m||{}):{};
+  if(isFB()){const bs=BASE['@cases'],lo={m:S.cases||{}};S.cases=(bs&&fdiff(bs,flat(lo)).length)?(rebase(bs,lo,{m:sv}).m||{}):sv;BASE['@cases']=flat({m:sv})}
+  else if(!pending('app/cases'))S.cases=sv;if(ready)render()},()=>{});
  db.collection('weeks').onSnapshot(q=>{q.docChanges().forEach(ch=>{const id=ch.doc.id;
    if(isFB()){if(ch.type==='removed'){delete S.all[id];delete BASE[id];return}const sv=clone(ch.doc.data()),lo=S.all[id],bs=BASE[id];S.all[id]=(lo&&bs&&fdiff(bs,flat(lo)).length)?rebase(bs,lo,sv):sv;BASE[id]=flat(sv);return}
    if(pending('weeks/'+id))return;

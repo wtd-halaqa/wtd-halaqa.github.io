@@ -149,6 +149,7 @@ td.big{font-weight:700}
 [data-pt],[data-ppt],[data-al],#bnPts,#nPts,#pPhone,#syncIn{direction:ltr;text-align:right}
 .srow.trow{grid-template-columns:minmax(0,1fr) auto auto}@media(max-width:640px){.srow.trow{grid-template-columns:1fr}}
 .note.demo{border-color:var(--te);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wdel{display:flex;justify-content:flex-start;margin:-2px 0 8px}
 .tag{font-size:12px;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--mut);font-weight:500}
 @media(max-width:640px){.seg button{font-size:13px}.srow.s5{grid-template-columns:1fr 1fr 1fr}.srow.s5 input,.srow.s5 select{grid-column:span 3}.srow.s5 button{grid-column:auto}}
 .ro .tas button{pointer-events:none;opacity:.7}
@@ -357,6 +358,7 @@ function vTake(){
   h+=`<button class="chip${i===n?' on':''}" data-week="${i}">الأسبوع ${i}<small>${isHol(i)?'إجازة':fmt(a)+' – '+fmt(b)}${!isHol(i)&&weekComplete(i)?' ✓':''}</small></button>`}
  if(!readOnly)h+=`<button class="chip add edit" data-act="addweek">+ أسبوع ${W+1}</button>`;
  h+='</div>';
+ if(!readOnly&&n===W&&W>1&&canDelWeek(W))h+=`<div class="wdel"><button class="btn dg s" data-act="delweek">حذف الأسبوع ${W}</button></div>`;
  if(isLocked(n))h+=`<div class="note lockn">الأسبوع ${n} منتهي ومقفل عشان ما يتعدل بالغلط.<button class="btn g s" data-act="unlock">فتح للتعديل</button></div>`;
  if(hol)return h+`<div class="hol"><b>الأسبوع ${n} إجازة</b><p class="mut">لا يُحسب في الإحصائيات ولا في التنبيهات.</p>${readOnly?'':'<button class="btn edit" data-act="holiday">استرجاع الأسبوع</button>'}</div>`;
  h+='<div class="strip">';
@@ -566,6 +568,8 @@ function doUndo(){const b=UNDO.pop();if(!b){showUndo();return}const [c,st,bn,all
   if(a){S.all[id]=a;persist('weeks/'+id,()=>S.all[id])}else{delete S.all[id];delWeekDoc(id)}});
  log('تراجع عن آخر تعديل');toast('تم التراجع');showUndo();render();if(ui.prof)drawProfile(true)}
 
+/* ---------- deleting weeks ---------- */
+function canDelWeek(m){const t=TERM();return !(t.id===S.cfg.cur&&m<=weekByDate(t))}
 /* ---------- lock finished weeks ---------- */
 ui.unlock=new Set();
 function isLocked(n){if(readOnly||S.cfg.lock===false)return false;const t=TERM();if(t.id===S.cfg.cur&&n>=weekByDate(t))return false;return !ui.unlock.has(t.id+':'+n)}
@@ -704,9 +708,9 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
   case 'expweek':expWeek(false);break;
   case 'blank':expWeek(true);break;
   case 'addweek':TERM().weeks++;saveCfg();ui.week=NW();ui.sess=null;log('إضافة الأسبوع '+NW());toast('أُضيف الأسبوع '+NW());render();break;
-  case 'delweek':{const m=NW();if(m<=1)return;const w=WK(m);const has=w&&w.rec&&Object.values(w.rec).some(r=>Object.keys(r).length);
+  case 'delweek':{const m=NW();if(m<=1)return;if(!canDelWeek(m)){toast('الأسبوع '+m+' هو الأسبوع الحالي حسب التاريخ، وما ينحذف');return}const w=WK(m);const has=w&&w.rec&&Object.values(w.rec).some(r=>Object.keys(r).length);
    if(has&&!await ask('الأسبوع '+m+' فيه تحضير مسجّل وسيُحذف. متابعة؟','حذف'))return;
-   const id=wid(m);delete S.all[id];TERM().weeks=m-1;saveCfg();if(db&&!local)db.doc('weeks/'+id).delete().catch(()=>{});else{stampPath('weeks/'+id);lsSave();syncSoon()}log('حذف الأسبوع '+m);render();break}
+   const id=wid(m);delete S.all[id];TERM().weeks=m-1;saveCfg();if(db&&!local)db.doc('weeks/'+id).delete().catch(()=>{});else{stampPath('weeks/'+id);lsSave();syncSoon()}log('حذف الأسبوع '+m);if(ui.week>NW())ui.week=NW();ui.sess=null;toast('حُذف الأسبوع '+m);render();break}
   case 'holiday':{const w=week(n);if(!w.holiday&&Object.values(w.rec).some(r=>Object.keys(r).length)&&!await ask('إلغاء الأسبوع '+n+' كامل؟ فيه تحضير مسجّل، لن يُحسب وهو إجازة (ويرجع إذا استرجعت الأسبوع).','إلغاء الأسبوع'))return;
    w.holiday=!w.holiday;saveWk(n);log((w.holiday?'إلغاء الأسبوع ':'استرجاع الأسبوع ')+n);if(w.holiday)checkAdvance(n);toast(w.holiday?'الأسبوع '+n+' صار إجازة':'رجع الأسبوع '+n);render();break}
   case 'cancelsess':{const w=week(n),s=sessions(n).find(x=>x.key===ui.sess);if(w.cancel[ui.sess]){delete w.cancel[ui.sess];log('استرجاع يوم '+sessLabel(n,s))}else{

@@ -187,6 +187,9 @@ body.pmode #nav,body.pmode #inst,body.pmode #sst,body.pmode #undo{display:none!i
 .portal{max-width:760px;margin:0 auto}.phero{display:flex;gap:14px;align-items:center;background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px}.phero img{height:64px;width:auto;border-radius:10px}.phero h1{font-size:clamp(28px,6vw,40px)}
 .plink{background:var(--card);border-radius:10px;padding:8px 12px;font-size:13px;word-break:break-all;color:var(--mut)}
 .brand{overflow-wrap:anywhere;line-height:1.15}@media(max-width:640px){.brand{font-size:clamp(19px,6.2vw,24px)}}
+table.heat td.n{color:inherit;font-weight:500;background:none}
+@media(max-width:400px){.btn{white-space:normal}}
+@media(max-width:380px){nav a{font-size:13px;padding:9px 1px}.top{padding-inline:8px}}
 </style>
 </head>
 <body>
@@ -651,7 +654,7 @@ function portalBox(st){const u=portalURL(st),num=waNum(st.phone||'');
 
 /* ---------- halaqa branding & settings ---------- */
 function applyBrand(t,lg){const b=document.querySelector('.brand');if(!b)return;const title=t||hTitle(),logo=lg!==undefined?lg:(S.cfg.logo||(HIDN()==='wtd'?'logo.png':''));
- const k=title+'|'+logo;if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=(logo?`<img src="${esc(logo)}" alt="">`:'')+'تحضير '+esc(title);document.title='تحضير '+title;logoImg=null}
+ const k=title+'|'+logo;if(b.dataset.k===k)return;b.dataset.k=k;if(isFB()&&ready)try{localStorage.setItem('watad-brand-'+HIDN(),JSON.stringify({t:title,l:logo}))}catch(e){}b.innerHTML=(logo?`<img src="${esc(logo)}" alt="">`:'')+'تحضير '+esc(title);document.title='تحضير '+title;logoImg=null}
 function vHalaqa(){if(!isFB())return '';const d=readOnly?' disabled':'',u=location.origin+location.pathname+'?h='+HIDN();
  let h=`<h2>الحلقة</h2><div class="form" style="grid-template-columns:minmax(0,1fr)"><label class="af">اسم الحلقة: يظهر في الأعلى والتقارير ورسائل أولياء الأمور<input type="text" id="hTitle" value="${esc(S.cfg.title||'')}" placeholder="${esc(HIDN()==='wtd'?'وتد':'مثلاً: حلقة الفرقان')}"${d}></label></div>
  <div class="acts" style="margin-top:8px;align-items:center">${S.cfg.logo?`<img src="${esc(S.cfg.logo)}" alt="الشعار" style="height:52px;border-radius:8px;background:#fff;padding:3px">`:''}${readOnly?'':`<label class="btn g s" style="display:inline-flex;align-items:center;cursor:pointer">${S.cfg.logo?'تغيير الشعار':'رفع شعار الحلقة'}<input type="file" id="hLogo" accept="image/*" hidden></label>${S.cfg.logo?'<button class="btn g s" data-hlogo="x">حذف الشعار</button>':''}`}</div>`;
@@ -1245,7 +1248,8 @@ function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let
  else if(kind==='waiting')b=`<h1>طلبك وصل</h1><p>أرسلنا طلبك للمشرف الرئيسي. أول ما يوافق تدخل الموقع تلقائياً، وتقدر تسكّر الصفحة وترجع لها بعدين.</p><p class="mut" dir="ltr">${em}</p>
   <div class="acts"><button class="btn g" data-au="recheck">تحقق الحين</button><button class="btn g" data-au="out">خروج</button></div>`;
  else b=`<h1>تعذّر الاتصال</h1><p>${esc(extra||'تأكد من الإنترنت وحدّث الصفحة.')}</p>${FBDBG?`<p class="mut" dir="ltr" style="font-size:12px">${esc(FBDBG)}</p>`:''}<div class="acts"><button class="btn" data-au="reload">تحديث</button></div>`;
- AUTHV=`<section class="authc"><img src="logo.png" alt="" class="alogo">${b}</section>`;document.body.classList.add('authm');main.innerHTML=AUTHV;
+ const cb=HIDV==='wtd'?{t:'وتد',l:'logo.png'}:(()=>{try{return JSON.parse(localStorage.getItem('watad-brand-'+HIDV)||'null')}catch(e){return null}})()||{t:'',l:''};if(cb.t)applyBrand(cb.t,cb.l);
+ AUTHV=`<section class="authc">${cb.l?`<img src="${esc(cb.l)}" alt="" class="alogo">`:''}${b}</section>`;document.body.classList.add('authm');main.innerHTML=AUTHV;
  const f=$('#aEm');if(f)setTimeout(()=>f.focus(),0)}
 function aMsg(m,ok){const e=$('#aErr');if(e){e.textContent=m;e.classList.toggle('ok',!!ok)}}
 async function authAct(a){const em=($('#aEm')||{}).value,pw=($('#aPw')||{}).value;

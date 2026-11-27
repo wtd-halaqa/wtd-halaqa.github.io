@@ -379,7 +379,7 @@ function vTake(){
  h+='</div>';
  if(!readOnly&&n===W&&W>1&&canDelWeek(W))h+=`<div class="wdel"><button class="btn dg s" data-act="delweek">حذف الأسبوع ${W}</button></div>`;
  if(isLocked(n))h+=`<div class="note lockn">الأسبوع ${n} منتهي ومقفل عشان ما يتعدل بالغلط.<button class="btn g s" data-act="unlock">فتح للتعديل</button></div>`;
- else if(!readOnly&&ui.unlock.has(TERM().id+':'+n))h+=`<div class="note lockn">الأسبوع ${n} مفتوح للتعديل الحين.<button class="btn s" data-act="relock">قفل الأسبوع</button></div>`;
+ else if(!readOnly&&wkOpen(n))h+=`<div class="note lockn">الأسبوع ${n} مفتوح للتعديل لكل المشرفين، ويتقفل لحاله بعد ساعتين.<button class="btn s" data-act="relock">قفل الأسبوع</button></div>`;
  if(hol)return h+`<div class="hol"><b>الأسبوع ${n} إجازة</b><p class="mut">لا يُحسب في الإحصائيات ولا في التنبيهات.</p>${readOnly?'':'<button class="btn edit" data-act="holiday">استرجاع الأسبوع</button>'}</div>`;
  h+='<div class="strip">';
  if(!ss.length)h+='<div class="mut">لا توجد برامج في هذا الأسبوع.</div>';
@@ -778,7 +778,8 @@ function tipBox(){if(typeof SYNC==='undefined'||!local||readOnly||ui.view!=='tak
  return ''}
 /* ---------- lock finished weeks ---------- */
 ui.unlock=new Set();
-function isLocked(n){if(readOnly||S.cfg.lock===false)return false;const t=TERM();if(t.id===S.cfg.cur&&n>=weekByDate(t))return false;return !ui.unlock.has(t.id+':'+n)}
+function isLocked(n){if(readOnly||S.cfg.lock===false)return false;const t=TERM();if(t.id===S.cfg.cur&&n>=weekByDate(t))return false;return !wkOpen(n)}
+function wkOpen(n){const w=WK(n);return !!(w&&w.open&&w.open>Date.now())}
 
 /* ---------- absence messages for one session ---------- */
 function absMsg(st,n,s){return ar('السلام عليكم ورحمة الله وبركاته\nولي أمر الطالب '+st.name+' حفظه الله\nنفيدكم بغياب ابنكم عن '+s.pname+' يوم '+DAYS[s.day]+' '+hfull(dayDate(n,s.day))+'.\nنأمل متابعته والحرص على حضوره، وجزاكم الله خيراً.\nوتد')}
@@ -910,7 +911,7 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
   if(await ask('حذف «'+b.name+'»؟','حذف')){S.cfg.batches=S.cfg.batches.filter(x=>x!==b);saveCfg();log('حذف '+b.name);render()}return}
  if(local&&D.act&&await saSettingsClick(D))return;
  switch(D.act){
-  case 'unlock':ui.unlock.add(TERM().id+':'+n);render();break;case 'relock':ui.unlock.delete(TERM().id+':'+n);toast('تم قفل الأسبوع '+n);render();break;
+  case 'unlock':week(n).open=Date.now()+2*36e5;saveWk(n);log('فتح الأسبوع '+n+' للتعديل');render();break;case 'relock':if(WK(n))delete WK(n).open;saveWk(n);log('قفل الأسبوع '+n);toast('تم قفل الأسبوع '+n);render();break;
   case 'absmsgs':openAbsMsgs();break;
   case 'expweek':expWeek(false);break;
   case 'blank':expWeek(true);break;
@@ -1089,7 +1090,7 @@ const SYNC={code:null,key:null,topic:null,conns:[],got:false,t:0,status:'off'};
 const SK='watad-demo-sync-code',SG='watad-demo-sync-got',SN='watad-demo-me';
 function partOf(path){if(path==='app/config')return 'cfg';if(path==='app/students')return 'st';if(path==='app/bonus')return 'bn';if(path==='app/cases')return 'cs';if(path.startsWith('weeks/'))return 'w:'+path.slice(6);return 'log'}
 const PREV={};
-function wparts(w){const o={m:JSON.stringify([w.sched||{},w.cancel||{},!!w.holiday]),r:{}};new Set([...Object.keys(w.rec||{}),...Object.keys(w.tas||{}),...Object.keys(w.notes||{})]).forEach(k=>o.r[k]=JSON.stringify([(w.rec||{})[k]||null,(w.tas||{})[k]||null,(w.notes||{})[k]||null]));return o}
+function wparts(w){const o={m:JSON.stringify([w.sched||{},w.cancel||{},!!w.holiday,w.open||0]),r:{}};new Set([...Object.keys(w.rec||{}),...Object.keys(w.tas||{}),...Object.keys(w.notes||{})]).forEach(k=>o.r[k]=JSON.stringify([(w.rec||{})[k]||null,(w.tas||{})[k]||null,(w.notes||{})[k]||null]));return o}
 function stampWeek(id,now,all){S._ts=S._ts||{};const w=S.all[id];if(!w){S._ts['w:'+id]=now;delete PREV[id];return}
  const cur=wparts(w),pv=all?{m:null,r:{}}:(PREV[id]||{m:null,r:{}});if(cur.m!==pv.m)S._ts['m:'+id]=now;
  new Set([...Object.keys(cur.r),...Object.keys(pv.r)]).forEach(k=>{if(cur.r[k]!==pv.r[k])S._ts['r:'+id+'|'+k]=now});PREV[id]=cur}
@@ -1099,7 +1100,7 @@ function initPrev(){Object.keys(S.all||{}).forEach(id=>PREV[id]=wparts(S.all[id]
 function ensureW(id,rw){const w=S.all[id]||(S.all[id]={});['rec','sched','notes','cancel','tas'].forEach(f=>w[f]=w[f]||{});if(rw&&rw.term)w.term=rw.term;return w}
 function setPart(k,R){if(k==='cfg')S.cfg=norm(R.cfg);else if(k==='st')S.students=R.st||[];else if(k==='bn')S.bonus=R.bn||[];else if(k==='cs')S.cases=R.cs||{};
  else if(k.startsWith('w:')){const id=k.slice(2),v=(R.all||{})[id];if(v)S.all[id]=v;else delete S.all[id]}
- else if(k.startsWith('m:')){const id=k.slice(2),rw=(R.all||{})[id];if(!rw)return;const w=ensureW(id,rw);w.sched=clone(rw.sched||{});w.cancel=clone(rw.cancel||{});if(rw.holiday)w.holiday=true;else delete w.holiday}
+ else if(k.startsWith('m:')){const id=k.slice(2),rw=(R.all||{})[id];if(!rw)return;const w=ensureW(id,rw);w.sched=clone(rw.sched||{});w.cancel=clone(rw.cancel||{});if(rw.holiday)w.holiday=true;else delete w.holiday;if(rw.open)w.open=rw.open;else delete w.open}
  else if(k.startsWith('r:')){const i=k.indexOf('|'),id=k.slice(2,i),key=k.slice(i+1),rw=(R.all||{})[id];const w=ensureW(id,rw);
   ['rec','tas','notes'].forEach(f=>{const v=rw&&rw[f]&&rw[f][key];if(v!=null)w[f][key]=clone(v);else delete w[f][key]})}}
 const wOf=k=>k.startsWith('w:')||k.startsWith('m:')?k.slice(2):k.startsWith('r:')?k.slice(2,k.indexOf('|')):null;

@@ -375,6 +375,7 @@ function vTake(){
  h+='</div>';
  if(!readOnly&&n===W&&W>1&&canDelWeek(W))h+=`<div class="wdel"><button class="btn dg s" data-act="delweek">حذف الأسبوع ${W}</button></div>`;
  if(isLocked(n))h+=`<div class="note lockn">الأسبوع ${n} منتهي ومقفل عشان ما يتعدل بالغلط.<button class="btn g s" data-act="unlock">فتح للتعديل</button></div>`;
+ else if(!readOnly&&ui.unlock.has(TERM().id+':'+n))h+=`<div class="note lockn">الأسبوع ${n} مفتوح للتعديل الحين.<button class="btn s" data-act="relock">قفل الأسبوع</button></div>`;
  if(hol)return h+`<div class="hol"><b>الأسبوع ${n} إجازة</b><p class="mut">لا يُحسب في الإحصائيات ولا في التنبيهات.</p>${readOnly?'':'<button class="btn edit" data-act="holiday">استرجاع الأسبوع</button>'}</div>`;
  h+='<div class="strip">';
  if(!ss.length)h+='<div class="mut">لا توجد برامج في هذا الأسبوع.</div>';
@@ -905,7 +906,7 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
   if(await ask('حذف «'+b.name+'»؟','حذف')){S.cfg.batches=S.cfg.batches.filter(x=>x!==b);saveCfg();log('حذف '+b.name);render()}return}
  if(local&&D.act&&await saSettingsClick(D))return;
  switch(D.act){
-  case 'unlock':ui.unlock.add(TERM().id+':'+n);render();break;
+  case 'unlock':ui.unlock.add(TERM().id+':'+n);render();break;case 'relock':ui.unlock.delete(TERM().id+':'+n);toast('تم قفل الأسبوع '+n);render();break;
   case 'absmsgs':openAbsMsgs();break;
   case 'expweek':expWeek(false);break;
   case 'blank':expWeek(true);break;

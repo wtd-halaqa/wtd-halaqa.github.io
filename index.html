@@ -150,6 +150,11 @@ td.big{font-weight:700}
 .srow.trow{grid-template-columns:minmax(0,1fr) auto auto}@media(max-width:640px){.srow.trow{grid-template-columns:1fr}}
 .wdel{display:flex;justify-content:flex-start;margin:-2px 0 8px}
 .note.tip{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-color:var(--or)}
+body.authm nav,body.authm #undo{display:none}
+.authc{max-width:420px;margin:24px auto;background:var(--card);border-radius:18px;padding:24px;text-align:start}
+.authc .alogo{height:72px;display:block;margin:0 auto 10px}.authc h1{font-size:30px;margin-bottom:6px}
+.af{display:grid;gap:4px;font-weight:500;margin:12px 0}.af input{min-height:46px;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--bg);text-align:right}
+.aerr{min-height:22px;color:var(--rd);font-size:14px;margin:4px 0 8px}.aerr.ok{color:var(--mut)}
 .tag{font-size:12px;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--mut);font-weight:500}
 @media(max-width:640px){.seg button{font-size:13px}.srow.s5{grid-template-columns:1fr 1fr 1fr}.srow.s5 input,.srow.s5 select{grid-column:span 3}.srow.s5 button{grid-column:auto}}
 .ro .tas button{pointer-events:none;opacity:.7}
@@ -257,7 +262,7 @@ function persist(path,get){if(readOnly)return;if(local||!db){stampPath(path);lsS
  const q=Q[path]||(Q[path]={busy:false,again:false,dirty:false,t:0});q.get=get;q.dirty=true;clearTimeout(q.t);q.t=setTimeout(()=>flush(path),450)}
 async function flush(path){const q=Q[path];if(q.busy){q.again=true;return}q.busy=true;q.again=false;q.dirty=false;
  try{await db.doc(path).set(clone(q.get()))}catch(e){const c=e&&e.code;
-  if(c==='invalid_argument'){readOnly=true;toast('لا تملك صلاحية التعديل على هذه الصفحة');render()}
+  if(c==='invalid_argument'||c==='permission-denied'){readOnly=true;toast('لا تملك صلاحية التعديل على هذه الصفحة');render()}
   else if(c==='quota_exceeded')toast('امتلأت مساحة الحفظ');
   else if(c==='unavailable'){q.dirty=true;q.again=true}
   else toast('تعذّر الحفظ، حاول مرة أخرى')}
@@ -331,7 +336,7 @@ function alertsBox(open){const al=alerts();if(!al.length)return '';
 function termSel(){if(S.cfg.terms.length<2)return '';return `<div class="tsel"><span class="mut">الفصل:</span><select id="term" aria-label="الفصل الدراسي">${S.cfg.terms.map(t=>`<option value="${esc(t.id)}"${t.id===TERM().id?' selected':''}>${esc(t.name)}${t.id===S.cfg.cur?' (الحالي)':''}</option>`).join('')}</select></div>`}
 
 /* ---------- views ---------- */
-function render(){const a=document.activeElement;
+function render(){if(AUTHV){main.innerHTML=AUTHV;return}const a=document.activeElement;
  if(a&&main.contains(a)&&a.matches('input[type=text],input[type=number],textarea')){deferRender=true;return}
  deferRender=false;
  if(!ready&&!stale){main.innerHTML='<div class="empty">جاري التحميل…</div>';return}
@@ -460,7 +465,7 @@ function vStudents(){const act=AS(),arch=S.students.filter(s=>s.arch);
  return h}
 
 function vSettings(){const d=readOnly?' disabled':'',t=TERM();
- let h='<h1>الإعدادات</h1><h2>النقاط العامة</h2><div class="ptsg">';
+ let h='<h1>الإعدادات</h1>'+vAccount()+'<h2>النقاط العامة</h2><div class="ptsg">';
  ST.forEach(x=>{h+=`<label><span><span class="dot" style="--c:${x.hex};display:inline-block"></span> ${x.l}</span><input type="text" value="${ar(+P()[x.k]||0)}" data-pt="${x.k}"${d}></label>`});
  TAS.forEach(x=>{h+=`<label><span><span class="dot" style="--c:${x.hex};display:inline-block"></span> ${x.l} (تُضاف)</span><input type="text" value="${ar(+P()['t'+x.k]||0)}" data-pt="t${x.k}"${d}></label>`});
  h+='</div><p class="mut">تغيير النقاط يُطبّق على كل التحضير المسجّل. البرنامج الذي له نقاط خاصة لا يتأثر بنقاط الحضور العامة. نقاط التسميع تُضاف فوق نقاط الحضور.</p><h2>البرامج</h2>';
@@ -484,7 +489,7 @@ function vSettings(){const d=readOnly?' disabled':'',t=TERM();
  <h2>سجل التعديلات</h2>`;
  const L=allLogs().slice(0,300);
  if(!L.length)h+='<p class="mut">لا توجد تعديلات مسجّلة بعد.</p>';
- else{h+='<details><summary>آخر '+L.length+' تعديل</summary>';L.forEach(x=>{const dt=new Date(x.t);h+=`<div class="lg"><span class="mut">${fmt(dt)} ${pad(dt.getHours())}:${pad(dt.getMinutes())}</span><span>${esc(x.x)} <span class="mut">— ${esc((x.u&&NAMES[x.u])||(local&&x.u)||(x.u===ME?'أنت':'مستخدم'))}</span></span></div>`});h+='</details>'}
+ else{h+='<details><summary>آخر '+L.length+' تعديل</summary>';L.forEach(x=>{const dt=new Date(x.t);h+=`<div class="lg"><span class="mut">${fmt(dt)} ${pad(dt.getHours())}:${pad(dt.getMinutes())}</span><span>${esc(x.x)} <span class="mut">— ${esc((x.u&&NAMES[x.u])||(x.u&&String(x.u).includes('@')?String(x.u).split('@')[0]:'')||(local&&x.u)||(x.u===ME?'أنت':'مستخدم'))}</span></span></div>`});h+='</details>'}
  return h}
 
 /* ---------- profile ---------- */
@@ -683,6 +688,8 @@ main.addEventListener('click',async e=>{const _b=snap();try{await onMainClick(e)
 async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!t||t.dataset.prof)return;const D=t.dataset;
  if(D.cal){const [nn,dw]=D.cal.split(':').map(Number);ui.week=nn;const s=sessions(nn).find(x=>x.day===dw);ui.sess=s?s.key:null;location.hash='take';return}
  if(D.tipoff){try{localStorage.setItem('watad-tip-'+D.tipoff,Date.now()+3*864e5)}catch(x){}render();return}
+ if(D.act==='accadd'){const e=($('#accEm').value||'').trim().toLowerCase(),r=$('#accR').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){toast('اكتب إيميل صحيح');return}await accSave(A=>{accRm(A,e);A[r+'s'].push(e)},'أُضيف '+e);return}
+ if(D.accdel){const e=D.accdel;if(!await ask(e===ME?'تبي تشيل نفسك؟ بتطلع من الموقع.':'إزالة '+e+' من المشرفين؟','إزالة'))return;await accSave(A=>accRm(A,e),'أُزيل '+e);return}
  if(D.act==='allowedit'){readOnly=false;ui.backup=false;render();return}
  if(D.week){ui.week=+D.week;ui.sess=null;render();return}
  if(D.sess){ui.sess=D.sess;render();return}
@@ -752,6 +759,7 @@ function onMainSubmit(e){e.preventDefault();if(readOnly)return;
  if(e.target.id==='addB'){const v=$('#bName').value.trim();if(!v)return;S.cfg.batches.push({id:uid(),name:v});saveCfg();log('إضافة '+v);$('#bName').value='';$('#bName').blur();render()}}
 main.addEventListener('change',async e=>{const _b=snap();try{await onMainChange(e)}finally{pushUndo(_b)}});
 async function onMainChange(e){const t=e.target,D=t.dataset;
+ if(D.accrole){const e=D.accrole,r=t.value;await accSave(A=>{accRm(A,e);A[r+'s'].push(e)},'تغيّرت صلاحية '+e);return}
  if(t.id==='term'){ui.term=t.value;ui.week=null;ui.sess=null;render();return}
  if(readOnly&&!/^f[WPB]$/.test(t.id))return;
  if(t.id==='lockOpt'){S.cfg.lock=t.checked;saveCfg();log((t.checked?'تفعيل':'إيقاف')+' قفل الأسابيع المنتهية');render();return}
@@ -990,26 +998,125 @@ function saInit(){ME=(()=>{try{return localStorage.getItem(SN)||''}catch(e){retu
  let dp=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;const b=$('#inst');b.hidden=false;b.onclick=async()=>{b.hidden=true;try{await dp.prompt()}catch(x){}dp=null}});
  main.addEventListener('change',e=>{if(e.target.id==='meName'){ME=e.target.value.trim();try{localStorage.setItem(SN,ME)}catch(x){}toast('تم')}})}
 
+/* ---------- accounts and cloud storage (Firebase) ---------- */
+const FB={"apiKey":"AIzaSyDzZSLrVR0t7PKnFdQgZV4wilall_jy1A0","authDomain":"wtd-halaqa.firebaseapp.com","projectId":"wtd-halaqa","storageBucket":"wtd-halaqa.firebasestorage.app","messagingSenderId":"947638973998","appId":"1:947638973998:web:b6f1892738e96e037e11bf"};
+let FBA=null,FBS=null,ACC=null,ROLE=null,AUTHV=null,authUser,fbStarted=false,CFGX=true;
+const isFB=()=>!!FB&&fbStarted;
+const AUTHERR={'auth/invalid-email':'الإيميل غير صحيح','auth/user-not-found':'ما فيه حساب بهذا الإيميل','auth/wrong-password':'كلمة المرور غلط','auth/invalid-credential':'الإيميل أو كلمة المرور غلط','auth/invalid-login-credentials':'الإيميل أو كلمة المرور غلط','auth/email-already-in-use':'فيه حساب بهذا الإيميل، سجّل دخول','auth/weak-password':'كلمة المرور لازم تكون ٦ خانات أو أكثر','auth/too-many-requests':'محاولات كثيرة، انتظر شوي وجرب','auth/network-request-failed':'ما فيه اتصال بالإنترنت','auth/missing-password':'اكتب كلمة المرور'};
+const aErr=e=>AUTHERR[e&&e.code]||'صار خطأ، حاول مرة ثانية';
+function loadFirebase(){const b='https://www.gstatic.com/firebasejs/10.14.1/';return ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'].reduce((p,f)=>p.then(()=>loadLib(b+f,()=>false)),Promise.resolve())}
+function authView(kind,extra){const u=authUser,em=u&&u.email?esc(u.email):'';let b='';
+ if(kind==='loading')b='<p class="mut">جاري التحميل…</p>';
+ else if(kind==='login')b=`<h1>تسجيل الدخول</h1><p class="mut">كل مشرف يدخل بإيميله.</p>
+  <label class="af">الإيميل<input type="email" id="aEm" autocomplete="username" inputmode="email" dir="ltr"></label>
+  <label class="af">كلمة المرور<input type="password" id="aPw" autocomplete="current-password" dir="ltr"></label>
+  <div class="aerr" id="aErr" role="alert"></div>
+  <div class="acts"><button class="btn" data-au="in">دخول</button><button class="btn g" data-au="up">حساب جديد</button></div>
+  <p style="margin:14px 0 0"><button class="lnk" data-au="reset">نسيت كلمة المرور؟</button></p>`;
+ else if(kind==='verify')b=`<h1>فعّل إيميلك</h1><p>أرسلنا رابط تفعيل إلى <b dir="ltr">${em}</b>. افتح الإيميل واضغط الرابط، وإذا ما لقيته شوف مجلد البريد غير المرغوب.</p>
+  <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="checked">فعّلته</button><button class="btn g" data-au="resend">أرسل الرابط مرة ثانية</button><button class="btn g" data-au="out">خروج</button></div>`;
+ else if(kind==='first')b=`<h1>أهلاً بك</h1><p>أنت أول من يدخل الموقع، فبتصير <b>المشرف الرئيسي</b>: تضيف المشرفين وتحدد صلاحياتهم من الإعدادات.</p><p class="mut" dir="ltr">${em}</p>
+  <div class="aerr" id="aErr" role="alert"></div><div class="acts"><button class="btn" data-au="claim">ابدأ</button><button class="btn g" data-au="out">خروج</button></div>`;
+ else if(kind==='denied')b=`<h1>ما عندك صلاحية</h1><p>حسابك <b dir="ltr">${em}</b> مسجّل، بس ما انضاف للمشرفين. اطلب من المشرف الرئيسي يضيف إيميلك من الإعدادات، وبعدها اضغط «تحقق مرة ثانية».</p>
+  <div class="acts"><button class="btn" data-au="recheck">تحقق مرة ثانية</button><button class="btn g" data-au="out">خروج</button></div>`;
+ else b=`<h1>تعذّر الاتصال</h1><p>${esc(extra||'تأكد من الإنترنت وحدّث الصفحة.')}</p><div class="acts"><button class="btn" data-au="reload">تحديث</button></div>`;
+ AUTHV=`<section class="authc"><img src="logo.png" alt="" class="alogo">${b}</section>`;document.body.classList.add('authm');main.innerHTML=AUTHV;
+ const f=$('#aEm');if(f)setTimeout(()=>f.focus(),0)}
+function aMsg(m,ok){const e=$('#aErr');if(e){e.textContent=m;e.classList.toggle('ok',!!ok)}}
+async function authAct(a){const em=($('#aEm')||{}).value,pw=($('#aPw')||{}).value;
+ try{
+  if(a==='in'){if(!em)return aMsg('اكتب الإيميل');aMsg('جاري الدخول…',1);await FBA.signInWithEmailAndPassword(em.trim(),pw||'')}
+  else if(a==='up'){if(!em)return aMsg('اكتب الإيميل');if(!pw||pw.length<6)return aMsg('اختر كلمة مرور ٦ خانات أو أكثر');aMsg('جاري إنشاء الحساب…',1);const c=await FBA.createUserWithEmailAndPassword(em.trim(),pw);await c.user.sendEmailVerification();authUser=c.user;authView('verify')}
+  else if(a==='reset'){if(!em)return aMsg('اكتب إيميلك فوق، ثم اضغط «نسيت كلمة المرور» مرة ثانية');await FBA.sendPasswordResetEmail(em.trim());aMsg('أرسلنا رابط تغيير كلمة المرور لإيميلك',1)}
+  else if(a==='resend'){await authUser.sendEmailVerification();aMsg('أرسلنا الرابط مرة ثانية',1)}
+  else if(a==='checked'){await authUser.reload();authUser=FBA.currentUser;if(!authUser.emailVerified)return aMsg('للحين ما تفعّل، افتح الرابط اللي في الإيميل');fbRoute()}
+  else if(a==='claim'){const e=authUser.email.toLowerCase();await FBS.doc('meta/access').set({admins:[e],editors:[],viewers:[]});fbRoute()}
+  else if(a==='recheck'){authView('loading');fbRoute()}
+  else if(a==='out'){await FBA.signOut()}
+  else if(a==='reload'){location.reload()}
+ }catch(e){aMsg(aErr(e))}}
+async function fbRoute(){const u=authUser;
+ if(fbStarted){if(!u)location.reload();return}
+ if(!u)return authView('login');
+ if(!u.emailVerified)return authView('verify');
+ let a;try{a=await FBS.doc('meta/access').get()}catch(e){return authView('error',e&&e.code==='permission-denied'?'قاعدة البيانات مقفلة: تأكد إن «قواعد الحماية» انلصقت في Firestore ثم Rules واضغطت Publish، وبعدها حدّث الصفحة.':'تأكد من الإنترنت وحدّث الصفحة.')}
+ const em=u.email.toLowerCase();if(!a.exists)return authView('first');
+ ACC=a.data();ROLE=(ACC.admins||[]).includes(em)?'admin':(ACC.editors||[]).includes(em)?'editor':(ACC.viewers||[]).includes(em)?'viewer':null;
+ if(!ROLE)return authView('denied');
+ fbStarted=true;AUTHV=null;document.body.classList.remove('authm');ME=em;if(ROLE==='viewer')readOnly=true;
+ FBS.doc('meta/access').onSnapshot(s=>{if(s.exists){ACC=s.data();if(ui.view==='settings'&&ready)render()}},()=>{});
+ db=wrapFS(FBS);subscribe()}
+async function fbStart(){authView('loading');
+ try{await loadFirebase()}catch(e){return authView('error','تعذّر تحميل نظام الحسابات. تأكد من الإنترنت وحدّث الصفحة.')}
+ try{firebase.initializeApp(FB);FBA=firebase.auth();FBA.languageCode='ar';FBS=firebase.firestore();try{await FBS.enablePersistence({synchronizeTabs:true})}catch(e){}}catch(e){return authView('error','إعدادات قاعدة البيانات غير صحيحة.')}
+ FBA.onAuthStateChanged(u=>{authUser=u;fbRoute()})}
+main.addEventListener('click',e=>{const t=e.target.closest('[data-au]');if(t){e.preventDefault();e.stopImmediatePropagation();authAct(t.dataset.au)}},true);
+main.addEventListener('keydown',e=>{if(e.key==='Enter'&&AUTHV&&(e.target.id==='aPw'||e.target.id==='aEm')){e.preventDefault();authAct('in')}});
+
+/* Firestore with the same shape the page already uses; week documents save field by field */
+const BASE={};
+function flat(o,pre,out){out=out||{};pre=pre||[];for(const k in o){const v=o[k],p=pre.concat(k);if(v&&typeof v==='object'&&!Array.isArray(v)){if(Object.keys(v).length)flat(v,p,out)}else if(v!==undefined)out[JSON.stringify(p)]=v}return out}
+function unflat(f){const o={};for(const k in f){const p=JSON.parse(k);let c=o;for(let i=0;i<p.length-1;i++)c=c[p[i]]=(c[p[i]]&&typeof c[p[i]]==='object')?c[p[i]]:{};c[p[p.length-1]]=clone(f[k])}return o}
+function fdiff(a,b){const ops=[];new Set(Object.keys(a||{}).concat(Object.keys(b||{}))).forEach(k=>{const x=(a||{})[k],y=(b||{})[k];if(JSON.stringify(x)!==JSON.stringify(y))ops.push([JSON.parse(k),y])});return ops}
+function rebase(base,local,server){const out=flat(server);fdiff(base,flat(local)).forEach(([p,v])=>{const k=JSON.stringify(p);
+  Object.keys(out).forEach(o=>{const q=JSON.parse(o);if(q.length>p.length&&p.every((x,i)=>q[i]===x))delete out[o]});
+  for(let i=1;i<p.length;i++)delete out[JSON.stringify(p.slice(0,i))];if(v===undefined)delete out[k];else out[k]=v});return unflat(out)}
+function wrapFS(fs){const FP=firebase.firestore.FieldPath,DEL=firebase.firestore.FieldValue.delete();
+ const W=(r,path)=>({get:()=>r.get(),update:d=>r.update(d),onSnapshot:(n,e)=>r.onSnapshot({includeMetadataChanges:true},n,e),
+  delete:()=>{if(path.startsWith('weeks/'))delete BASE[path.slice(6)];return r.delete()},
+  set:async d=>{if(!path.startsWith('weeks/')||!BASE[path.slice(6)])return r.set(d).then(()=>{if(path.startsWith('weeks/'))BASE[path.slice(6)]=flat(d)});
+   const id=path.slice(6),ops=fdiff(BASE[id],flat(d));if(!ops.length)return;const args=[];
+   ops.forEach(([p,v])=>{args.push(new FP(...p),v===undefined?DEL:v)});
+   try{await r.update(...args)}catch(e){if(e&&e.code==='not-found')await r.set(d);else throw e}BASE[id]=flat(d)}});
+ const Q=(q)=>({orderBy:(f,d)=>Q(q.orderBy(f,d)),limit:n=>Q(q.limit(n)),get:()=>q.get(),onSnapshot:(n,e)=>q.onSnapshot({includeMetadataChanges:true},n,e)});
+ return {doc:p=>W(fs.doc(p),p),collection:p=>Q(fs.collection(p))}}
+
+function vAccount(){if(!isFB())return '';const R={admin:'مشرف رئيسي',editor:'مشرف',viewer:'اطلاع فقط'};
+ let h=`<h2>الحساب</h2><div class="srow trow"><span>أنت داخل بـ <b dir="ltr">${esc(ME)}</b> · ${R[ROLE]||''}</span><button class="btn g s" data-au="out">تسجيل خروج</button><span></span></div>`;
+ if(ROLE!=='admin')return h;
+ const A=ACC||{},rows=[].concat((A.admins||[]).map(e=>[e,'admin']),(A.editors||[]).map(e=>[e,'editor']),(A.viewers||[]).map(e=>[e,'viewer']));
+ h+=`<h2>المشرفون</h2><p class="mut" style="margin:0 0 6px">أضف إيميل كل مشرف، ويسوي هو حساب بنفس الإيميل من صفحة الدخول. «مشرف» يحضّر ويعدّل، و«اطلاع فقط» يشوف بدون تعديل، و«مشرف رئيسي» يضيف ويشيل المشرفين.</p>`;
+ rows.forEach(([e,r])=>{h+=`<div class="srow trow"><span dir="ltr" style="text-align:right">${esc(e)}</span><select data-accrole="${esc(e)}" aria-label="الصلاحية">${Object.keys(R).map(k=>`<option value="${k}"${k===r?' selected':''}>${R[k]}</option>`).join('')}</select><button class="btn dg s" data-accdel="${esc(e)}">إزالة</button></div>`});
+ h+=`<div class="form" style="grid-template-columns:minmax(0,1fr) 150px auto;margin-top:8px"><input type="email" id="accEm" placeholder="إيميل المشرف الجديد" dir="ltr" autocomplete="off"><select id="accR"><option value="editor">مشرف</option><option value="viewer">اطلاع فقط</option><option value="admin">مشرف رئيسي</option></select><button class="btn" data-act="accadd">إضافة</button></div>`;
+ return h}
+async function accSave(mut,msg){const A={admins:[...(ACC.admins||[])],editors:[...(ACC.editors||[])],viewers:[...(ACC.viewers||[])]};mut(A);
+ if(!A.admins.length){toast('لازم يبقى مشرف رئيسي واحد على الأقل');return}
+ try{await FBS.doc('meta/access').set(A);ACC=A;toast(msg);log(msg);render()}catch(e){toast('تعذّر الحفظ: '+(e&&e.code==='permission-denied'?'ما عندك صلاحية':'حاول مرة ثانية'))}}
+const accRm=(A,e)=>{['admins','editors','viewers'].forEach(k=>A[k]=A[k].filter(x=>x!==e))};
+async function fbInit(){const raw=(()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})();
+ const cnt=v=>{let n=0;Object.values((v&&v.all)||{}).forEach(w=>Object.values(w.rec||{}).forEach(r=>n+=Object.keys(r).length));return n};
+ const o=document.createElement('div');o.className='ov';o.style.zIndex=25;
+ o.innerHTML=`<div class="dlg"><h2 style="margin:0 0 8px">قاعدة البيانات فاضية</h2><p>هذي أول مرة. وش ترفع لها؟</p><div class="acts" style="flex-direction:column;align-items:stretch">${raw&&raw.cfg?`<button class="btn" data-x="dev">التحضير اللي في هذا الجهاز (${cnt(raw)} حالة)</button>`:''}<button class="btn g" data-x="seed">تحضير الشيت الأصلي (${cnt({all:SEED_ALL})} حالة)</button></div></div>`;
+ o.addEventListener('click',e=>{const x=e.target.dataset.x;if(!x)return;
+  if(x==='dev'){S.cfg=norm(raw.cfg);S.students=raw.students||[];S.all=raw.all||{};S.bonus=raw.bonus||[]}
+  else{S.cfg=norm(clone(SEED_CFG));S.students=SEED.slice();S.all=clone(SEED_ALL);S.bonus=[]}
+  CFGX=true;saveCfg();saveSt();saveBn();Object.keys(S.all).forEach(id=>persist('weeks/'+id,()=>S.all[id]));log('تهيئة قاعدة البيانات');o.remove();toast('تم رفع البيانات');render()});
+ document.body.appendChild(o)}
+
 /* ---------- start ---------- */
-function afterLoad(){if(ready)return;if(loaded.cfg&&loaded.st&&loaded.wk&&loaded.bn){ready=true;autoWeeks();render()}}
+function afterLoad(){if(ready)return;if(loaded.cfg&&loaded.st&&loaded.wk&&loaded.bn){ready=true;autoWeeks();render();if(isFB()&&!CFGX&&ROLE==='admin')fbInit()}}
 route();
 (async()=>{const C=window.claude;const safe=p=>p.catch(()=>null);
  [dl,db,U]=C?await Promise.all([safe(C.use('downloads')),safe(C.use('db')),safe(C.use('user'))]):[null,null,null];
  if(C)setupDesktop(C);
+ if(!db&&FB){fbStart();return}
  if(!db){local=true;saInit();ready=true;autoWeeks();render();return}
  try{if(U){ME=await U.id();const w=await U.can('data.write');if(w===false)readOnly=true}}catch(e){}
- const timer=setTimeout(()=>{if(!ready){stale=true;render()}},10000);
+ subscribe()})();
+function subscribe(){const timer=setTimeout(()=>{if(!ready){stale=true;render()}},10000);
  const err=()=>{clearTimeout(timer);stale=true;render()};
  const rer=()=>{if(ready){clearTimeout(timer);stale=false}render()};
- db.doc('app/config').onSnapshot(s=>{if(!pending('app/config'))S.cfg=norm(s.exists?s.data():null);if(!s.metadata.fromCache){loaded.cfg=true;afterLoad()}rer()},err);
+ db.doc('app/config').onSnapshot(s=>{if(!s.metadata.fromCache)CFGX=s.exists;if(!pending('app/config'))S.cfg=norm(s.exists?s.data():null);if(!s.metadata.fromCache){loaded.cfg=true;afterLoad()}rer()},err);
  db.doc('app/students').onSnapshot(s=>{if(!pending('app/students')&&s.exists)S.students=clone(s.data().list||[]);if(!s.metadata.fromCache){loaded.st=true;afterLoad()}rer()},err);
  db.doc('app/bonus').onSnapshot(s=>{if(!pending('app/bonus')&&s.exists)S.bonus=clone(s.data().list||[]);if(!s.metadata.fromCache){loaded.bn=true;afterLoad()}rer()},err);
- db.collection('weeks').onSnapshot(q=>{q.docChanges().forEach(ch=>{const id=ch.doc.id;if(pending('weeks/'+id))return;
+ db.collection('weeks').onSnapshot(q=>{q.docChanges().forEach(ch=>{const id=ch.doc.id;
+   if(isFB()){if(ch.type==='removed'){delete S.all[id];delete BASE[id];return}const sv=clone(ch.doc.data()),lo=S.all[id],bs=BASE[id];S.all[id]=(lo&&bs&&fdiff(bs,flat(lo)).length)?rebase(bs,lo,sv):sv;BASE[id]=flat(sv);return}
+   if(pending('weeks/'+id))return;
    if(ch.type==='removed')delete S.all[id];else S.all[id]=clone(ch.doc.data())});
   if(!q.metadata.fromCache){loaded.wk=true;afterLoad()}rer()},err);
  db.collection('log').orderBy('d','desc').limit(14).onSnapshot(q=>{q.docs.forEach(d=>{const it=(d.data().items)||[];LG[d.id]=clone(it);const ids=new Set(it.map(x=>x.id));
    if(LOCALLOG[d.id]&&!pending('log/'+d.id))LOCALLOG[d.id]=LOCALLOG[d.id].filter(x=>!ids.has(x.id))});if(ui.view==='settings'&&ready)render()},()=>{});
-})();
+}
 }
 </script>
 </body>

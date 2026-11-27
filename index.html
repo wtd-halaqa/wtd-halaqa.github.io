@@ -146,9 +146,10 @@ td.big{font-weight:700}
 .filters .acts{grid-column:1/-1}
 .hb.ab{grid-template-columns:minmax(100px,180px) minmax(0,1fr) auto}.hb.ab span:last-child{white-space:nowrap;font-size:13px;font-weight:500}
 .hp{display:grid;grid-template-columns:70px minmax(0,1fr) 92px;gap:6px}
-[data-pt],[data-ppt],[data-al],#bnPts,#nPts,#pPhone,#syncIn{direction:ltr;text-align:right}
+[data-phone],[data-pt],[data-ppt],[data-al],#bnPts,#nPts,#pPhone,#syncIn{direction:ltr;text-align:right}
 .srow.trow{grid-template-columns:minmax(0,1fr) auto auto}@media(max-width:640px){.srow.trow{grid-template-columns:1fr}}
 .wdel{display:flex;justify-content:flex-start;margin:-2px 0 8px}
+.note.tip{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-color:var(--or)}
 .tag{font-size:12px;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--mut);font-weight:500}
 @media(max-width:640px){.seg button{font-size:13px}.srow.s5{grid-template-columns:1fr 1fr 1fr}.srow.s5 input,.srow.s5 select{grid-column:span 3}.srow.s5 button{grid-column:auto}}
 .ro .tas button{pointer-events:none;opacity:.7}
@@ -338,7 +339,7 @@ function render(){const a=document.activeElement;
  document.querySelectorAll('#nav a').forEach(x=>x.classList.toggle('on',x.dataset.v===ui.view));
  document.body.classList.toggle('ro',readOnly);
  let h='';
- if(local&&!SYNC.code&&ui.view==='take')h+='<div class="note">البيانات محفوظة في هذا الجهاز. لتشغيلها على أكثر من جهاز فعّل «المزامنة» من <a href="#settings">الإعدادات</a>.</div>';
+ h+=tipBox();
  if(readOnly)h+='<div class="note">وضع القراءة فقط: لا تملك صلاحية التعديل.</div>';
  if(stale)h+='<div class="note">تعذّر الوصول للبيانات حالياً، قد تكون غير محدّثة.</div>';
  h+=({take:vTake,stats:vStats,students:vStudents,settings:vSettings}[ui.view])();
@@ -452,7 +453,7 @@ function vStudents(){const act=AS(),arch=S.students.filter(s=>s.arch);
   h+='</div>'});
  h+=`<details style="margin-top:18px"><summary>المؤرشفون (${arch.length})</summary><p class="mut">لا يظهرون في التحضير ولا التنبيهات، ويبقى سجلهم في الإحصائيات.</p>`;
  arch.forEach(s=>{h+=`<div class="al"><button class="lnk" data-prof="${esc(s.id)}"><b>${esc(s.name)}</b></button><span class="mut">${esc(batchName(s.b))}${s.grad?' · متخرّج':''}</span>${readOnly?'':`<button class="xb" data-unarch="${esc(s.id)}">استرجاع</button><button class="xb" data-del="${esc(s.id)}" style="color:var(--rd)">حذف نهائي</button>`}</div>`});
- h+='</details><h2>الدفعات</h2><p class="mut">رتّب الدفعات من الأعلى للأدنى، لأن الترقية تنقل كل دفعة للتي فوقها.</p>';
+ const noPh=act.filter(x=>!x.phone).length;h+='</details>'+`<details style="margin-top:8px"><summary>أرقام أولياء الأمور ${noPh?'(ناقص '+noPh+')':'(مكتملة)'}</summary><p class="mut">اكتب الرقم ويتحفظ لحاله، ويستخدم في رسائل الغياب وواتساب.</p>${act.map(x=>`<div class="srow trow"><span>${esc(x.name)}</span><input type="text" inputmode="tel" data-phone="${esc(x.id)}" value="${esc(ar(x.phone||''))}" placeholder="٠٥٠٠٠٠٠٠٠٠" aria-label="جوال ولي أمر ${esc(x.name)}"${readOnly?' disabled':''}></div>`).join('')}</details>`;h+='<h2>الدفعات</h2><p class="mut">رتّب الدفعات من الأعلى للأدنى، لأن الترقية تنقل كل دفعة للتي فوقها.</p>';
  S.cfg.batches.forEach((b,i)=>{h+=`<div class="srow s5"><input type="text" value="${esc(b.name)}" data-bren="${esc(b.id)}" aria-label="اسم الدفعة"${readOnly?' disabled':''}><span class="mut">${act.filter(s=>s.b===b.id).length} طالب</span>${readOnly?'':`<button class="btn g s" data-bup="${i}" ${i?'':'disabled'} aria-label="أعلى">▲</button><button class="btn g s" data-bdn="${i}" ${i<S.cfg.batches.length-1?'':'disabled'} aria-label="أدنى">▼</button><button class="btn dg s" data-bdel="${esc(b.id)}">حذف</button>`}</div>`});
  if(!readOnly)h+=`<form class="form edit" id="addB" style="margin-top:10px;grid-template-columns:minmax(0,1fr) auto"><input type="text" id="bName" placeholder="اسم دفعة جديدة"><button class="btn">إضافة دفعة</button></form>
  <div class="panel"><b>ترقية الدفعات لسنة جديدة</b><p class="mut" style="margin:4px 0 10px">كل دفعة تنتقل للتي فوقها في الترتيب، وطلاب الدفعة الأعلى يُؤرشفون كمتخرّجين. السجل القديم محفوظ.</p><button class="btn" data-act="promote">ترقية الدفعات</button></div>`;
@@ -569,6 +570,17 @@ function doUndo(){const b=UNDO.pop();if(!b){showUndo();return}const [c,st,bn,all
 
 /* ---------- deleting weeks ---------- */
 function canDelWeek(m){const t=TERM();return !(t.id===S.cfg.cur&&m<=weekByDate(t))}
+/* ---------- reminders that protect the data ---------- */
+const tipLS=k=>{try{return +localStorage.getItem(k)||0}catch(e){return 0}};
+function tipBox(){if(typeof SYNC==='undefined'||!local||readOnly||ui.view!=='take'||/\/demo\//.test(location.pathname))return '';
+ const now=Date.now(),off=k=>tipLS('watad-tip-'+k)>now;
+ const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/i.test(ua),mob=ios||/Android/i.test(ua);
+ const stand=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+ const box=(k,msg,btn)=>`<div class="note tip"><span>${msg}</span><span class="acts">${btn}<button class="btn g s" data-tipoff="${k}">لاحقاً</button></span></div>`;
+ if(!SYNC.code&&!off('sync'))return box('sync','المزامنة مو مفعّلة: لو ضاع الجوال أو انمسح المتصفح يضيع التحضير. فعّلها واحفظ الرمز عندك.','<a class="btn s" href="#settings" style="text-decoration:none;display:inline-flex;align-items:center">تفعيل المزامنة</a>');
+ if(mob&&!stand&&!off('home'))return box('home',ios?'أضف الموقع للشاشة الرئيسية عشان سفاري ما يمسح بياناته: اضغط «مشاركة» تحت، ثم «إضافة إلى الشاشة الرئيسية».':'ثبّت الموقع على جوالك عشان ما تنمسح بياناته: من قائمة المتصفح اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».','');
+ const lb=tipLS('watad-lastbk');if(now-lb>7*864e5&&!off('bk'))return box('bk',lb?'مر أكثر من أسبوع على آخر نسخة احتياطية.':'ما نزّلت أي نسخة احتياطية للحين.','<button class="btn s" data-act="backup">تنزيل نسخة الحين</button>');
+ return ''}
 /* ---------- lock finished weeks ---------- */
 ui.unlock=new Set();
 function isLocked(n){if(readOnly||S.cfg.lock===false)return false;const t=TERM();if(t.id===S.cfg.cur&&n>=weekByDate(t))return false;return !ui.unlock.has(t.id+':'+n)}
@@ -670,6 +682,7 @@ main.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;appl
 main.addEventListener('click',async e=>{const _b=snap();try{await onMainClick(e)}finally{pushUndo(_b)}});
 async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!t||t.dataset.prof)return;const D=t.dataset;
  if(D.cal){const [nn,dw]=D.cal.split(':').map(Number);ui.week=nn;const s=sessions(nn).find(x=>x.day===dw);ui.sess=s?s.key:null;location.hash='take';return}
+ if(D.tipoff){try{localStorage.setItem('watad-tip-'+D.tipoff,Date.now()+3*864e5)}catch(x){}render();return}
  if(D.act==='allowedit'){readOnly=false;ui.backup=false;render();return}
  if(D.week){ui.week=+D.week;ui.sess=null;render();return}
  if(D.sess){ui.sess=D.sess;render();return}
@@ -730,7 +743,7 @@ async function onMainClick(e){const t=e.target.closest('button,[data-act]');if(!
   case 'expstats':expStats();break;
   case 'expterm':expTerm();break;
   case 'xlsx':expXlsx();break;
-  case 'backup':save('نسخة-تحضير-وتد-'+ar(iso(new Date()))+'.json',JSON.stringify({cfg:S.cfg,students:S.students,all:S.all,bonus:S.bonus},null,1));break}
+  case 'backup':try{localStorage.setItem('watad-lastbk',Date.now())}catch(x){}save('نسخة-تحضير-وتد-'+ar(iso(new Date()))+'.json',JSON.stringify({cfg:S.cfg,students:S.students,all:S.all,bonus:S.bonus},null,1));render();break}
 }
 main.addEventListener('submit',e=>{const _b=snap();onMainSubmit(e);pushUndo(_b)});
 function onMainSubmit(e){e.preventDefault();if(readOnly)return;
@@ -744,15 +757,16 @@ async function onMainChange(e){const t=e.target,D=t.dataset;
  if(t.id==='lockOpt'){S.cfg.lock=t.checked;saveCfg();log((t.checked?'تفعيل':'إيقاف')+' قفل الأسابيع المنتهية');render();return}
  if(t.id==='impX'&&t.files[0]){const f=t.files[0];t.value='';importXlsx(f);return}
  if(t.id==='fW'){ui.stW=t.value;render();return}if(t.id==='fP'){ui.stP=t.value;render();return}if(t.id==='fB'){ui.stB=t.value;render();return}
+ if(D.phone){const s=stu(D.phone),v=toL(t.value).trim();if(s&&v!==(s.phone||'')){s.phone=v;saveSt();log('جوال ولي أمر '+s.name)}return}
  if(D.ren){const s=stu(D.ren),v=t.value.trim();if(s&&v&&v!==s.name){log('تغيير اسم '+s.name+' إلى '+v);s.name=v;saveSt()}return}
  if(D.mv){const s=stu(D.mv);s.b=t.value;saveSt();log('نقل '+s.name+' إلى '+batchName(s.b));render();return}
  if(D.bren){const b=S.cfg.batches.find(x=>x.id===D.bren),v=t.value.trim();if(b&&v&&v!==b.name){log('تغيير اسم '+b.name+' إلى '+v);b.name=v;saveCfg()}return}
  if(D.pren){const p=prog(D.pren),v=t.value.trim();if(p&&v&&v!==p.name){log('تغيير اسم '+p.name+' إلى '+v);p.name=v;saveCfg()}return}
  if(D.tren){const x=S.cfg.terms.find(y=>y.id===D.tren),v=t.value.trim();if(x&&v&&v!==x.name){log('تغيير اسم الفصل إلى '+v);x.name=v;saveCfg()}return}
- if(D.pt){const v=Math.round(+toL(t.value)||0);S.cfg.points[D.pt]=v;saveCfg();log('نقاط '+(STM[D.pt]?STM[D.pt].l:TASM[D.pt.slice(1)].l)+' = '+v);return}
+ if(D.pt){const v=Math.round(+toL(t.value)||0),old=+P()[D.pt]||0;if(v===old){render();return}if(!await ask('تغيير نقاط «'+(STM[D.pt]?STM[D.pt].l:TASM[D.pt.slice(1)].l)+'» من '+old+' إلى '+v+' يغيّر حساب كل التحضير السابق وترتيب الطلاب. متابعة؟','تغيير')){render();return}S.cfg.points[D.pt]=v;saveCfg();log('نقاط '+(STM[D.pt]?STM[D.pt].l:TASM[D.pt.slice(1)].l)+' = '+v);return}
  if(D.ptas){const p=prog(D.ptas);p.tasmee=t.checked;saveCfg();log((t.checked?'تفعيل':'إيقاف')+' التسميع في '+p.name);return}
  if(D.pown){const p=prog(D.pown);if(t.checked)p.points=Object.assign({},P());else delete p.points;saveCfg();log((t.checked?'نقاط خاصة لـ':'إلغاء النقاط الخاصة لـ')+p.name);render();return}
- if(D.ppt){const p=prog(D.ppt),v=Math.round(+toL(t.value)||0);if(p&&p.points){p.points[D.k]=v;saveCfg();log('نقاط '+STM[D.k].l+' في '+p.name+' = '+v)}return}
+ if(D.ppt){const p=prog(D.ppt),v=Math.round(+toL(t.value)||0);if(p&&p.points){const old=+(p.points[D.k]??P()[D.k])||0;if(v===old){render();return}if(!await ask('تغيير نقاط «'+STM[D.k].l+'» في '+p.name+' من '+old+' إلى '+v+' يغيّر حساب كل التحضير السابق. متابعة؟','تغيير')){render();return}p.points[D.k]=v;saveCfg();log('نقاط '+STM[D.k].l+' في '+p.name+' = '+v)}return}
  if(D.al){S.cfg.alerts[D.al]=Math.max(0,Math.round(+toL(t.value)||0));saveCfg();return}
  if(/^start[dmy]$/.test(t.id)){TERM().start=iso(sunday(readH('start')));saveCfg();log('بداية '+TERM().name+': '+hlong(parse(TERM().start)));toast('بداية الأسبوع الأول: الأحد '+hlong(parse(TERM().start)));render();return}
  if(t.id==='restore'&&t.files[0]){const rf=t.files[0];t.value='';try{const v=JSON.parse(await rf.text());if(!v.cfg||!Array.isArray(v.students))throw 0;
@@ -942,8 +956,8 @@ function newCode(){const A='0123456789',r=crypto.getRandomValues(new Uint8Array(
 function vSync(){const d=readOnly?' disabled':'';
  let h=`<h2>المزامنة بين الأجهزة</h2><p style="margin:0 0 8px">البيانات محفوظة في هذا الجهاز دائماً. فعّل المزامنة إذا تبي نفس البيانات على جوالك وكمبيوترك، أو مع شخص يحضّر معك. البيانات تُشفَّر قبل إرسالها، ولا يقرأها إلا من عنده الرمز.</p>`;
  if(SYNC.code)h+=`<div class="panel" style="margin-top:6px"><div class="mut">رمز المزامنة لهذا الجهاز</div><b style="font-size:26px;letter-spacing:2px;direction:ltr;display:block;text-align:right">${esc(SYNC.code)}</b>
-  <div class="acts" style="margin-top:8px"><button class="btn" data-act="copysync">نسخ رابط الربط</button><button class="btn dg s" data-act="stopsync">إيقاف المزامنة هنا</button></div>
-  <p class="mut">افتح الرابط المنسوخ في الجهاز الثاني، أو أدخل الرمز في إعداداته. احفظ الرمز عندك، ولا تعطيه إلا لمن يحضّر معك.</p></div>`;
+  <div class="acts" style="margin-top:8px"><button class="btn" data-act="copysync">نسخ رابط الربط</button><button class="btn g" data-act="copycode">نسخ الرمز</button><button class="btn dg s" data-act="stopsync">إيقاف المزامنة هنا</button></div>
+  <p class="mut">افتح الرابط المنسوخ في الجهاز الثاني، أو أدخل الرمز في إعداداته. احفظ الرمز عندك، ولا تعطيه إلا لمن يحضّر معك. وخل ساعة كل جهاز يحضّر على الضبط التلقائي.</p></div>`;
  else h+=`<div class="acts"><button class="btn" data-act="mksync"${d}>إنشاء رمز مزامنة (من الجهاز اللي فيه بياناتك)</button></div>
   <div class="form" style="grid-template-columns:minmax(0,1fr) auto;margin-top:8px"><input type="text" id="syncIn" placeholder="عندك رمز؟ اكتبه هنا (١٢ رقماً)" autocomplete="off" style="direction:ltr"><button class="btn g" data-act="joinsync">ربط</button></div>
   <p class="mut">عند الربط برمز موجود، تُستبدل بيانات هذا الجهاز ببيانات الرمز.</p>`;
@@ -954,6 +968,7 @@ async function saSettingsClick(D){
  if(D.act==='joinsync'){const v=toL($('#syncIn').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length!==12){toast('الرمز ١٢ رقماً');return true}
   const code=v.slice(0,4)+'-'+v.slice(4,8)+'-'+v.slice(8);try{localStorage.removeItem(SG)}catch(e){}S._ts={};await startSync(code,false);toast('جاري جلب البيانات…');render();return true}
  if(D.act==='stopsync'){if(await ask('إيقاف المزامنة على هذا الجهاز؟ البيانات تبقى فيه.','إيقاف')){stopSync();try{localStorage.removeItem(SK);localStorage.removeItem(SG)}catch(e){}render()}return true}
+ if(D.act==='copycode'){try{await navigator.clipboard.writeText(ar(SYNC.code));toast('نُسخ الرمز، احفظه في الملاحظات')}catch(e){toast('تعذّر النسخ، اكتب الرمز عندك')}return true}
  if(D.act==='copysync'){const u=location.href.split('#')[0]+'#sync-'+SYNC.code.replace(/-/g,'');try{await navigator.clipboard.writeText(u);toast('نُسخ الرابط')}catch(e){const o=document.createElement('div');o.className='ov';o.innerHTML='<div class="dlg"><p style="margin:0 0 8px">انسخ الرابط:</p><input type="text" readonly style="direction:ltr"><div class="acts" style="margin-top:10px"><button class="btn g" data-x="close">إغلاق</button></div></div>';o.querySelector('input').value=u;o.addEventListener('click',ev=>{if(ev.target===o||ev.target.dataset.x)o.remove()});document.body.appendChild(o);o.querySelector('input').select()}return true}
  return false}
 function saInit(){ME=(()=>{try{return localStorage.getItem(SN)||''}catch(e){return ''}})();

@@ -368,7 +368,7 @@ function applySearch(){const q=nAr(toL(ui.q||''));document.querySelectorAll('#ma
  document.querySelectorAll('#main .grp[data-g]').forEach(g=>g.hidden=!!q&&!g.querySelector('.row:not([hidden])'))}
 
 function vTake(){
- const W=NW();if(!ui.week||ui.week>W)ui.week=Math.min(weekByDate(),W);
+ const W=NW();if(!ui.week||ui.week>W||(ui.week===ui.wAuto&&ui.wTerm===TERM().id)){ui.week=ui.wAuto=Math.min(weekByDate(),W);ui.wTerm=TERM().id}
  const n=ui.week,ss=sessions(n),hol=isHol(n),act=AS();
  if(!ss.some(s=>s.key===ui.sess)){const t=new Date().getDay();const td=n===weekByDate()&&ss.find(s=>s.day===t&&!s.cx);
   ui.sess=(td||ss.find(s=>!s.cx&&done(n,s.key)<act.length)||ss[0]||{}).key||null}
